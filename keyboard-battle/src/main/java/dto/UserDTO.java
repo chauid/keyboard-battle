@@ -1,0 +1,103 @@
+package dto;
+
+public class UserDTO {
+	private int id;
+	private String email;
+	private String password;
+	private String nickname;
+	private int level;
+	private int currentExp;
+	private int playCount;
+	private int highScore;
+	private String thumbnailImage;
+	private String description;
+	private TitleDTO title;
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getNickname() {
+		return nickname;
+	}
+
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void setLevel(int level) {
+		this.level = level;
+	}
+
+	public int getCurrentExp() {
+		return currentExp;
+	}
+
+	public int getPlayCount() {
+		return playCount;
+	}
+
+	public void setPlayCount(int playCount) {
+		this.playCount = playCount;
+	}
+
+	public void setCurrentExp(int currentExp) {
+		this.currentExp = currentExp;
+	}
+
+	public int getHighScore() {
+		return highScore;
+	}
+
+	public void setHighScore(int highScore) {
+		this.highScore = highScore;
+	}
+
+	public String getThumbnailImage() {
+		return thumbnailImage;
+	}
+
+	public void setThumbnailImage(String thumbnailImage) {
+		this.thumbnailImage = thumbnailImage;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public TitleDTO getTitle() {
+		return title;
+	}
+
+	public void setTitle(TitleDTO title) {
+		this.title = title;
+	}
+}
