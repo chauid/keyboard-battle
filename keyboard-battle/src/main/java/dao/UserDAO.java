@@ -30,7 +30,11 @@ public class UserDAO {
 				user.setNickname(rs.getString("nickname"));
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
+				user.setPlayCount(rs.getInt("play_count"));
 				user.setHighScore(rs.getInt("high_score"));
+				user.setThumbnailImage(rs.getString("thumbnail_image"));
+				user.setDescription(rs.getString("description"));
+				user.setTitle(rs.getInt("title"));
 				list.add(user);
 			}
 		} catch (SQLException e) {
@@ -42,7 +46,7 @@ public class UserDAO {
 	}
 	
 	public UserDTO readUserById(int id) {
-		UserDTO user = new UserDTO();
+		UserDTO user = null;
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -53,13 +57,18 @@ public class UserDAO {
 			pstmt.setInt(1, id);
 			rs = pstmt.executeQuery();
 			if (rs.next()) {
+				user = new UserDTO();
 				user.setId(rs.getInt("id"));
 				user.setEmail(rs.getString("email"));
 				user.setPassword(rs.getString("password"));
 				user.setNickname(rs.getString("nickname"));
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
+				user.setPlayCount(rs.getInt("play_count"));
 				user.setHighScore(rs.getInt("high_score"));
+				user.setThumbnailImage(rs.getString("thumbnail_image"));
+				user.setDescription(rs.getString("description"));
+				user.setTitle(rs.getInt("title"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -70,7 +79,7 @@ public class UserDAO {
 	}
 	
 	public UserDTO readUserByEmail(String email) {
-		UserDTO user = new UserDTO();
+		UserDTO user = null;
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -81,13 +90,18 @@ public class UserDAO {
 			pstmt.setString(1, email);
 			rs = pstmt.executeQuery();
 			if (rs.next()) {
+				user = new UserDTO();
 				user.setId(rs.getInt("id"));
 				user.setEmail(rs.getString("email"));
 				user.setPassword(rs.getString("password"));
 				user.setNickname(rs.getString("nickname"));
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
+				user.setPlayCount(rs.getInt("play_count"));
 				user.setHighScore(rs.getInt("high_score"));
+				user.setThumbnailImage(rs.getString("thumbnail_image"));
+				user.setDescription(rs.getString("description"));
+				user.setTitle(rs.getInt("title"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -98,7 +112,7 @@ public class UserDAO {
 	}
 	
 	public UserDTO readUserByNickname(String nickname) {
-		UserDTO user = new UserDTO();
+		UserDTO user = null;
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -109,13 +123,18 @@ public class UserDAO {
 			pstmt.setString(1, nickname);
 			rs = pstmt.executeQuery();
 			if (rs.next()) {
+				user = new UserDTO();
 				user.setId(rs.getInt("id"));
 				user.setEmail(rs.getString("email"));
 				user.setPassword(rs.getString("password"));
 				user.setNickname(rs.getString("nickname"));
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
+				user.setPlayCount(rs.getInt("play_count"));
 				user.setHighScore(rs.getInt("high_score"));
+				user.setThumbnailImage(rs.getString("thumbnail_image"));
+				user.setDescription(rs.getString("description"));
+				user.setTitle(rs.getInt("title"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -128,16 +147,13 @@ public class UserDAO {
 	public void createUser(UserDTO user) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
-		String query = "INSERT INTO user (email, password, nickname, level, current_exp, high_score) VALUES (?, ?, ?, ?, ?, ?)";
+		String query = "INSERT INTO user (email, password, nickname) VALUES (?, ?, ?)";
 
 		try {
 			pstmt = conn.prepareStatement(query);
 			pstmt.setString(1, user.getEmail());
 			pstmt.setString(2, user.getPassword());
 			pstmt.setString(3, user.getNickname());
-			pstmt.setInt(4, user.getLevel());
-			pstmt.setInt(5, user.getCurrentExp());
-			pstmt.setInt(6, user.getHighScore());
 			pstmt.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();

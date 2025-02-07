@@ -10,7 +10,7 @@ Cookie[] cookies = request.getCookies();
 if (cookies != null) {
 	for (int i = 0; i < cookies.length; i++) {
 		String name = cookies[i].getName();
-		if (name.equals("user")) {
+		if (name.equals("nickname")) {
 			Cookie loginCookie = cookies[i];
 			loginCookie.setPath("/");
 			loginCookie.setMaxAge(0);

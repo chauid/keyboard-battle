@@ -1,5 +1,7 @@
 package dto;
 
+import java.security.Timestamp;
+
 public class UserDTO {
 	private int id;
 	private String email;
@@ -11,7 +13,8 @@ public class UserDTO {
 	private int highScore;
 	private String thumbnailImage;
 	private String description;
-	private TitleDTO title;
+	private int title;
+	private Timestamp createdAt;
 
 	public int getId() {
 		return id;
@@ -93,11 +96,19 @@ public class UserDTO {
 		this.description = description;
 	}
 
-	public TitleDTO getTitle() {
+	public int getTitle() {
 		return title;
 	}
 
-	public void setTitle(TitleDTO title) {
+	public void setTitle(int title) {
 		this.title = title;
+	}
+
+	public Timestamp getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Timestamp createdAt) {
+		this.createdAt = createdAt;
 	}
 }

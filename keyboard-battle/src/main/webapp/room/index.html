@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>게임 대기실</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f5;
+      color: #333;
+      margin: 0;
+      padding: 0;
+  }
+  
+  .container {
+      width: 80%;
+      margin: 20px auto;
+      padding: 10px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .header {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background-color: #87CEEB;
+      border-radius: 10px 10px 0 0;
+      color: white;
+  }
+  
+  .room-title {
+      font-size: 20px;
+      font-weight: bold;
+  }
+  
+  .exit-btn {
+      background-color: #ff6666;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+  }
+  
+  .exit-btn:hover {
+      background-color: #ff4d4d;
+  }
+  
+  .main {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+  }
+  
+  .players, .spectators {
+      width: 48%;
+      background-color: #e6f7ff;
+      padding: 10px;
+      border-radius: 5px;
+  }
+  
+  .player-box, .spectator {
+      background-color: #cceeff;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+  }
+  
+  .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: #87CEEB;
+      border-radius: 0 0 10px 10px;
+      color: white;
+  }
+  
+  .my-info, .chat-box {
+      width: 45%;
+      background-color: #e6f7ff;
+      padding: 10px;
+      border-radius: 5px;
+  }
+  
+  .ready-btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+  }
+  
+  .ready-btn:hover {
+      background-color: #45a049;
+  }
+  
+  </style>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="room-title">방 제목</div>
+        <button class="exit-btn">나가기</button>
+      </div>
+      <div class="main">
+        <div class="players">
+          <div class="player-box">
+            <div class="player-title">플레이어 1</div>
+            <div class="player-info">플레이어1 정보</div>
+          </div>
+          <div class="player-box">
+            <div class="player-title">플레이어 2</div>
+            <div class="player-info">플레이어2 정보</div>
+          </div>
+        </div>
+        <div class="spectators">
+          <div class="spectator-title">관전자 목록</div>
+          <div class="spectator">관전자1</div>
+          <div class="spectator">관전자2</div>
+          <div class="spectator">관전자3</div>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="my-info">내 정보</div>
+        <button class="ready-btn">준비</button>
+        <div class="chat-box">채팅창</div>
+      </div>
+    </div>
+
+    <script>
+      $(document).ready(function () {
+        $(".ready-btn").click(function () {
+          alert("준비 완료!");
+        });
+        $(".exit-btn").click(function () {
+          alert("방을 나갑니다.");
+        });
+      });
+    </script>
+  </body>
+</html>

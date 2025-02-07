@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 public class MysqlConnection {
-	private static final String DB_ENV = "db.properties";
+	private static final String DB_ENV = "C:/db.properties";
 	private static String driver;
 	private static String username;
 	private static String password;
