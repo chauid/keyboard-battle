@@ -10,7 +10,7 @@ aside {
   float: left;
   align-items: center;
   width: 200px;
-  height: 94vh;
+  height: calc(100vh - 60px);;
   background-color: rgb(240, 240, 240);
 }
 
@@ -59,24 +59,54 @@ aside .user-info .user-exp {
   margin: 5px 0;
 }
 
-aside .user-list-item {
+aside .user-list-items {
   width: 100%;
   height: 200px;
 }
 
+.user-list-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 2px 7px;
+  padding-left: 0px;
+  border: 0px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.user-list-item:hover {
+  background-color: #e0e0e0;
+}
+
+.user-list-level {
+  font-size: smaller;
+  margin-right: 10px;
+  text-align: center;
+  min-width: 25px;
+  padding: 2px;
+  border: 0px;
+  border-radius: 10px;
+  background-color: #81cdf8;
+}
+
+.user-list-name {
+  font-size: smaller;
+}
+
 main {
-  margin-top: 6vh;
+  margin-top: 60px;
   display: flex;
   padding-top: 20px;
   flex-direction: column;
   align-items: center;
   width: calc(100% - 200px);
-  height: 94vh;
+  height: calc(100vh - 60px);
   background-color: #d1cdec;
 }
 
 main .main-menu {
-  height: 5%;
+  width: 95%;
 }
 
 main .room-list {
@@ -88,6 +118,7 @@ main .room-list {
   background-color: #b8b2e7;
   padding: 15px;
   margin: 10px;
+  margin-top: 0;
 }
 
 main .room-list table {
@@ -128,7 +159,7 @@ main .room-nav-buttons button {
 
 main .chat-box {
   width: 100%;
-  height: 25%;
+  height: calc(25% + 42px);
   background-color: #e0e0e0;
   padding: 10px;
 }
@@ -143,7 +174,7 @@ main .chat-box-header {
 
 main .chat-box-body {
   width: 100%;
-  height: 50%;
+  height: 70%;
   background-color: #f0f0f0;
   margin: 0 0 10px 0;
   padding: 10px;

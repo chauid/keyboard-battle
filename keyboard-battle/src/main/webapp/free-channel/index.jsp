@@ -1,37 +1,78 @@
-<%@page import="socket.FreeChat"%>
-<%@page import="dao.UserDAO"%>
-<%@page import="dto.UserDTO"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
-
-<%
-Object userSession = session.getAttribute("user");
-Integer userId = 0;
-if (userSession == null) {
-	response.sendRedirect("/keyboard-battle/login");
-} else {
-	userId = Integer.parseInt(userSession.toString());
-}
-UserDAO userDao = new UserDAO();
-UserDTO user = userDao.readUserById(userId);
-%>
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>제목</title>
+<title>자유 채널</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="/styles/free-channel.css">
 <link rel="stylesheet" href="/keyboard-battle/styles/free-channel.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
 <script>
+	let userLocation;
+	function fetchData() {
+		$.ajax({
+			type: 'GET',
+			url: './client-in-channel.jsp',
+			success: function (response) {
+				$('#client-count').text("현재 로그인한 유저[" + response.trim() + "명]");
+			}
+		});
+		$.ajax({
+			type: 'GET',
+			url: './get-user.jsp',
+			success: function (response) {
+				$('#user-name').text(response.nickname);
+				$('#user-level').text("레벨 " + response.level);
+				$('#user-exp').text(response.exp);
+				$('#user-max-exp').text(response.level * 10);
+				$('#user-image').attr('src', response.thumbnail);
+				userLocation = "/keyboard-battle/profile?user=" + response.nickname;
+			}
+		});
+		$.ajax({
+			type: 'GET',
+			url: './chat-count.jsp',
+			success: function (response) {
+				$('#chat-status').text("채팅 [" + response.trim() + "명]");
+			}
+		});
+ 		$.ajax({
+			type: 'GET',
+			url: './get-user-list.jsp',
+			success: function (response) {
+				const userList = $('#user-list-items');
+				userList.empty();
+				response.forEach((user) => {
+					userList.append(`
+				<div id="user-\${user.nickname}" class="user-list-item" onclick="window.location.href = '/keyboard-battle/profile/?user=\${user.nickname}'">
+					<span class="user-list-level">\${user.level}</span>
+					<span class="user-list-name">\${user.nickname}</span>
+				</div>
+					`);
+				});
+			}
+		});
+	}
+
 	$(document).ready(function () {
+		$('#create-room-form').on('submit', function (event) {
+			event.preventDefault();
+			$.ajax({
+				type: 'POST',
+				url: './create-room.jsp',
+				data: $(this).serialize(),
+				success: function (response) {
+					console.log(response);
+				}
+			});
+		});
+
 		$('#user-info').on('click', function () {
-			window.location.href = "/keyboard-battle/profile?user=" + "<%if(user != null) out.write(user.getNickname());%>";
+			window.location.href = userLocation;
 		});
 
 		const ws = new WebSocket('/keyboard-battle/free-chat');
@@ -55,7 +96,7 @@ UserDTO user = userDao.readUserById(userId);
 
 		function sendMessage() {
 			const chatInput = $('#chat-input').val();
-			const nickname = document.cookie.split('=')[1];
+			const nickname = $('#user-name').text();
 			const chatMessage = `\${nickname}:\${chatInput}`;
 			console.log(chatMessage);
 			const chatBody = document.getElementById('chat-box-body');
@@ -74,72 +115,60 @@ UserDTO user = userDao.readUserById(userId);
 			}
 		});
 
+		fetchData();
+	});
+	
+	$(window).on('load', function () {
+		console.log('object');
 		setInterval(() => {
-			$.ajax({
-				type: 'GET',
-				url: './client-count.jsp',
-				success: function (response) {
-					console.log(response);
-					$('#client-count').text(response);
-				}
-			});
-		}, 1000);
+			fetchData();
+		}, 3000);
 	});
 </script>
 </head>
-
 <body>
 	<jsp:include page="/components/header.jsp" />
 	<aside>
 		<div class="channel-info">
 			<p style="font-size: smaller;">자유 채널</p>
-			<p style="font-size: small;">
-				현재 접속자[<%=FreeChat.getNumberOfClients()%>명]
-			</p>
+			<p id="client-count" style="font-size: small;">현재 로그인한 유저[0명]</p>
 		</div>
 		<div id="user-info" class="user-info">
 			<p>내 정보</p>
 			<div>
 				<figure class="user-img">
-					<img src="https://i.namu.wiki/i/zkey2H6ka0WwWS7C210XdqA5pQ_4oaPrYIfyLZFbvwhVaVgi56czAsx1yrG0Jt2WhKKh6hrOZ4JEVE2stG7cxg.webp" alt="">
+					<img id="user-image" src="https://i.namu.wiki/i/zkey2H6ka0WwWS7C210XdqA5pQ_4oaPrYIfyLZFbvwhVaVgi56czAsx1yrG0Jt2WhKKh6hrOZ4JEVE2stG7cxg.webp"
+						alt="">
 				</figure>
-				<p class="user-name">
-					<%if(user != null) out.write(user.getNickname());%>
-				</p>
-				<p class="user-level">
-					레벨
-					<%if(user != null) out.write(Integer.toString(user.getLevel()));%>
-				</p>
+				<p id="user-name" class="user-name"></p>
+				<p id="user-level" class="user-level">레벨</p>
 				<span class="user-exp">exp</span>
 				<div style="display: inline;">
-					<span> <%if(user != null) out.write(Integer.toString(user.getCurrentExp()));%>
-					</span> <span> / </span> <span> <%if(user != null) out.write(Integer.toString(user.getLevel() * 10));%>
-					</span>
+					<span id="user-exp"></span> <span> / </span> <span id="user-max-exp"> </span>
 				</div>
 			</div>
 		</div>
 		<div class="user-list">
 			<p>유저 목록</p>
-			<div class="user-list-item"></div>
+			<div id="user-list-items" class="user-list-items">
+				<!-- <div class="user-list-item">
+					<span class="user-list-level">1</span>
+					<span class="user-list-name">유저 이름</span>
+				</div> -->
+			</div>
 		</div>
 	</aside>
 	<main>
 		<div class="main-menu">
-			<ul class="nav nav-tabs main-menu">
-				<li class="nav-item">
-					<button class="nav-link" style="background-color: #7ad875;">빠른 시작</button>
-				</li>
-				<li class="nav-item">
-					<button class="nav-link" style="background-color: #81cdf8;">방 검색</button>
-				</li>
-				<li class="nav-item">
-					<button class="nav-link" style="background-color: #97c3dd;">방 만들기</button>
-				</li>
-			</ul>
+			<div>
+				<input class="search-input" type="text" placeholder="방 검색">
+				<button type="button"><i class="bi bi-search"></i></button>
+			</div>
+			<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#create-room">방 만들기</button>
 		</div>
 		<div class="room-list">
 			<div>
-				<p>방 목록</p>
+				<p style="font-weight: bold;">방 목록</p>
 				<div>
 					<table>
 						<tbody>
@@ -160,7 +189,7 @@ UserDTO user = userDao.readUserById(userId);
 		</div>
 		<div class="chat-box">
 			<div class="chat-box-header">
-				<p class="chat-box-title" style="font-size: small;">채팅</p>
+				<p id="chat-status" class="chat-box-title" style="font-size: small;">채팅 [0명]</p>
 			</div>
 			<div id="chat-box-body" class="chat-box-body">
 				<!-- <div class="message-box">
@@ -173,28 +202,36 @@ UserDTO user = userDao.readUserById(userId);
 				<button id="chat-send">전송</button>
 			</div>
 	</main>
-
-
-
 	<!-- Modal -->
-	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog">
+	<div class="modal fade" id="create-room" data-bs-backdrop="static" tabindex="-1" aria-labelledby="create-room-label" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+					<h1 class="modal-title fs-5" id="create-room-label">Modal title</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<div class="modal-body">Modal body text goes here.</div>
+				<div class="modal-body">
+					<form id="create-room-form" action="./create-room.jsp" method="post">
+						<div>
+							<label for="room-name">방 제목</label>
+							<input id="room-name" name="room-name" type="text" placeholder="방 제목" required>
+						</div>
+						<div>
+							<label for="room-password">비밀번호 설정</label>
+							<input id="room-password" type="password" name="room-password" placeholder="비밀번호">
+						</div>
+							<label for="room-allow-spectator">관전자 허용</label>
+							<input id="room-allow-spectator" type="checkbox" name="room-allow-spectator">
+					</form>
+				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary">Save changes</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn-primary">방 만들기</button>
 				</div>
 			</div>
 		</div>
 	</div>
-
-	<!-- Button trigger modal -->
-	<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Launch demo modal</button>
+	<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#create-room">Launch demo modal</button>
 </body>
 
 </html>

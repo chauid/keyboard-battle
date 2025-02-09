@@ -15,6 +15,23 @@
 </head>
 <body>
 <%
+Cookie[] cookies = request.getCookies();
+if (cookies != null) {
+	for (int i = 0; i < cookies.length; i++) {
+		String name = cookies[i].getName();
+		if (name.equals("JSESSIONID")) {
+			Cookie loginCookie = cookies[i];
+			loginCookie.setPath("/");
+			loginCookie.setMaxAge(0);
+			response.addCookie(loginCookie);
+			Cookie cookie = new Cookie("JSESSIONID", "123");
+			cookie.setPath("/keyboard-battle");
+			cookie.setHttpOnly(true);
+			response.addCookie(cookie);
+			break;
+		}
+	}
+}
 UserDAO userDao = new UserDAO();
 	List<UserDTO> userList = userDao.readAllUser();
 	// 모든 userList를 출력

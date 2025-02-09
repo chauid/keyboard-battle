@@ -1,6 +1,6 @@
 package dto;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 public class UserDTO {
 	private int id;

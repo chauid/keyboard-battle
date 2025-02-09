@@ -12,6 +12,25 @@ import java.util.List;
 
 public class UserDAO {
 	MysqlConnection db = new MysqlConnection();
+
+	public void createUser(UserDTO user) {
+		Connection conn = db.getConnection();
+		PreparedStatement pstmt = null;
+		String query = "INSERT INTO user (email, password, nickname) VALUES (?, ?, ?)";
+
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, user.getEmail());
+			pstmt.setString(2, user.getPassword());
+			pstmt.setString(3, user.getNickname());
+			pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			db.closeConnection(conn, pstmt);
+		}
+	}
+
 	public List<UserDTO> readAllUser() {
 		List<UserDTO> list = new ArrayList<UserDTO>();
 		Connection conn = db.getConnection();
@@ -44,7 +63,7 @@ public class UserDAO {
 		}
 		return list;
 	}
-	
+
 	public UserDTO readUserById(int id) {
 		UserDTO user = null;
 		Connection conn = db.getConnection();
@@ -77,7 +96,7 @@ public class UserDAO {
 		}
 		return user;
 	}
-	
+
 	public UserDTO readUserByEmail(String email) {
 		UserDTO user = null;
 		Connection conn = db.getConnection();
@@ -110,7 +129,7 @@ public class UserDAO {
 		}
 		return user;
 	}
-	
+
 	public UserDTO readUserByNickname(String nickname) {
 		UserDTO user = null;
 		Connection conn = db.getConnection();
@@ -143,25 +162,7 @@ public class UserDAO {
 		}
 		return user;
 	}
-	
-	public void createUser(UserDTO user) {
-		Connection conn = db.getConnection();
-		PreparedStatement pstmt = null;
-		String query = "INSERT INTO user (email, password, nickname) VALUES (?, ?, ?)";
 
-		try {
-			pstmt = conn.prepareStatement(query);
-			pstmt.setString(1, user.getEmail());
-			pstmt.setString(2, user.getPassword());
-			pstmt.setString(3, user.getNickname());
-			pstmt.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			db.closeConnection(conn, pstmt);
-		}
-	}
-	
 	public void updateUser(UserDTO user) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
@@ -183,8 +184,8 @@ public class UserDAO {
 			db.closeConnection(conn, pstmt);
 		}
 	}
-	
-	public void deleteUser(int id) {
+
+	public void deleteUserById(int id) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
 		String query = "DELETE FROM user WHERE id = ?";
