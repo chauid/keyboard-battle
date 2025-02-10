@@ -20,6 +20,7 @@
                         data: $(this).serialize(),
                         beforeSend: function() {
                             $('#loading').css('display', 'block');
+                            $('#submit-form').prop('disabled', true);
                         },
                         success: function(response) {
                             if (response.result === 'success') {
@@ -28,6 +29,7 @@
                                 $('#error-msg').text("이메일 또는 비밀번호가 일치하지 않습니다.").css('color', 'red');
                             }
                             $('#loading').css('display', 'none');
+                            $('#submit-form').prop('disabled', false);
                         },
                         error: function(xhr, status, error) {
                             $('#loading').css('display', 'none');
@@ -49,7 +51,7 @@
             <input id="password" name="password" placeholder="Password" required>
         </div>
         <p id="error-msg"></p>
-        <button type="submit" class="submit">
+        <button id="submit-form" type="submit" class="submit">
             <span>로그인</span>
             <span id="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
         </button>

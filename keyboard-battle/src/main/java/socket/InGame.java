@@ -16,7 +16,7 @@ import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 
-@ServerEndpoint("/in-game")
+@ServerEndpoint("/in-game/{roomId}")
 public class InGame {
 	private static Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
 

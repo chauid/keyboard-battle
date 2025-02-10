@@ -5,12 +5,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>제목</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
 <style>
 body {
 	margin: 0;
@@ -30,18 +24,18 @@ header {
 	padding: 10px 20px;
 }
 
-nav ul {
+header nav ul {
 	display: flex;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-nav ul li {
+header nav ul li {
 	margin-left: 20px;
 }
 
-nav ul li a {
+header nav ul li a {
 	text-decoration: none;
 	color: #000;
 	font-weight: bold;

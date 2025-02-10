@@ -13,7 +13,6 @@
 	$(document).ready(function() {
 		$("form").on("submit", function(event) {
 			event.preventDefault();
-			// 비밀번호와 비밀번호 재입력이 일치하는지 확인
 			if ($("#password").val() !== $("#confirm_password").val()) {
 				$("#error-msg").text("비밀번호가 일치하지 않습니다.").css("color", "red");
 				return;

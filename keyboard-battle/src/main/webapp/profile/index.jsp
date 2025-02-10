@@ -36,7 +36,7 @@ UserDTO user = userDao.readUserByNickname(request.getParameter("user"));
 		<div class="row">
 			<div class="col-12">
 				<figure class="user-img">
-					<img src="https://i.namu.wiki/i/zkey2H6ka0WwWS7C210XdqA5pQ_4oaPrYIfyLZFbvwhVaVgi56czAsx1yrG0Jt2WhKKh6hrOZ4JEVE2stG7cxg.webp" alt="">
+					<img src="/keyboard-battle/images/no-image.png" alt="">
 				</figure>
 			</div>
 		</div>

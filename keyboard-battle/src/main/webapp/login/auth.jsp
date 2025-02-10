@@ -16,11 +16,11 @@ MessageDigest digest = MessageDigest.getInstance("SHA-512");
 byte[] encodedHash = digest.digest(plainPassword.getBytes(StandardCharsets.UTF_8));
 StringBuilder hexString = new StringBuilder();
 for (byte b : encodedHash) {
-    String hex = Integer.toHexString(0xff & b);
-    if (hex.length() == 1) {
-        hexString.append('0');
-    }
-    hexString.append(hex);
+	String hex = Integer.toHexString(0xff & b);
+	if (hex.length() == 1) {
+		hexString.append('0');
+	}
+	hexString.append(hex);
 }
 String HashedPassword = hexString.toString();
 
@@ -30,13 +30,13 @@ if (user != null && HashedPassword.equals(user.getPassword())) {
 	cookie.setPath("/");
 	cookie.setMaxAge(60 * 60 * 24);
 	response.addCookie(cookie);
-	
+
 	Integer userId = user.getId();
 	cookie = new Cookie("userid", userId.toString());
 	cookie.setPath("/");
-	cookie.setMaxAge(60 * 60 * 2);
+	cookie.setMaxAge(60 * 60 * 24);
 	response.addCookie(cookie);
-	
+
 	JSONObject reponseJson = new JSONObject();
 	reponseJson.put("result", "success");
 

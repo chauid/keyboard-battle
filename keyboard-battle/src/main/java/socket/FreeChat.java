@@ -22,7 +22,7 @@ public class FreeChat {
 
 	@OnOpen
 	public void onOpen(Session session) {
-		System.out.println(session.getId() + " 접속");
+//		System.out.println(session.getId() + " 접속");
 		clients.add(session); // 세션 추가
 	}
 

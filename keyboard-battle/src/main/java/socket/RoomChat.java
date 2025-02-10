@@ -62,4 +62,9 @@ public class RoomChat {
             }
         }
     }
+    
+	public static int getNumberOfClientsInRoom(String roomId) {
+		Set<Session> roomSessions = rooms.get(roomId);
+		return roomSessions != null ? roomSessions.size() : 0;
+	}
 }

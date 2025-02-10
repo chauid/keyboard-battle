@@ -44,8 +44,8 @@ public class RoomDTO {
 		return allowSpectator;
 	}
 
-	public void setAllowSpectator(boolean allowVisitor) {
-		this.allowSpectator = allowVisitor;
+	public void setAllowSpectator(boolean allowSpectator) {
+		this.allowSpectator = allowSpectator;
 	}
 
 	public boolean isIngame() {

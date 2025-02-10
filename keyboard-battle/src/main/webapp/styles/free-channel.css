@@ -10,7 +10,7 @@ aside {
   float: left;
   align-items: center;
   width: 200px;
-  height: calc(100vh - 60px);;
+  height: calc(100vh - 60px);
   background-color: rgb(240, 240, 240);
 }
 
@@ -109,9 +109,37 @@ main .main-menu {
   width: 95%;
 }
 
+.main-menu-items {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main-menu-search {
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 80%;
+}
+
+.create-room-submit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.password-submit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
 main .room-list {
   width: 95%;
-  height: 70%;
+  height: 65%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -128,27 +156,20 @@ main .room-list table {
 main .room-list table th,
 main .room-list table td {
   border: 1px solid black;
-  padding: 10px;
+  padding: 5px 10px;
 }
 
 main .room-list table th {
-  background-color: #df8d8d;
-}
-
-main .room-list table tr {
-  cursor: pointer;
+  background-color: #8ddfcd;
+  white-space: nowrap;
+  text-align: center;
+  font-size: smaller;
+  font-weight: normal;
 }
 
 main .room-list table td {
   text-align: center;
-}
-
-main .room-nav-buttons {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-  bottom: 0;
+  cursor: pointer;
 }
 
 main .room-nav-buttons button {
@@ -157,9 +178,16 @@ main .room-nav-buttons button {
   margin: 0 10px;
 }
 
+main .nav-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
 main .chat-box {
   width: 100%;
-  height: calc(25% + 42px);
+  height: 28%;
   background-color: #e0e0e0;
   padding: 10px;
 }
@@ -167,6 +195,7 @@ main .chat-box {
 main .chat-box-header {
   width: 100%;
   height: 30px;
+  font-size: smaller;
   background-color: #e9e9e9;
   margin-bottom: 5px;
   padding: 5px;
@@ -174,9 +203,8 @@ main .chat-box-header {
 
 main .chat-box-body {
   width: 100%;
-  height: 70%;
+  height: calc(100% - 80px);
   background-color: #f0f0f0;
-  margin: 0 0 10px 0;
   padding: 10px;
   overflow-y: auto;
 }

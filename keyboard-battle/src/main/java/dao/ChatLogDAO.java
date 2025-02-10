@@ -2,6 +2,7 @@ package dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import db.MysqlConnection;
 import dto.ChatLogDTO;
@@ -27,19 +28,30 @@ public class ChatLogDAO {
 		}
 	}
 
-	public void readChatLogByUserId(int userId, boolean isOrderDesc) {
+	public ChatLogDTO readChatLogByUserId(int userId, boolean isOrderDesc) {
+		ChatLogDTO chatLog = null;
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
+		ResultSet rs = null;
 		String query = "SELECT * FROM chat_log WHERE user_id = ? ORDER BY created_at " + (isOrderDesc ? "DESC" : "ASC");
 
 		try {
 			pstmt = conn.prepareStatement(query);
 			pstmt.setInt(1, userId);
-			pstmt.executeQuery();
+			rs = pstmt.executeQuery();
+			if (rs.next()) {
+				chatLog = new ChatLogDTO();
+				chatLog.setId(rs.getInt("id"));
+				chatLog.setMessage(rs.getString("message"));
+				chatLog.setPlace(ChatLogDTO.Place.valueOf(rs.getString("place")));
+				chatLog.setUserId(rs.getInt("user_id"));
+				chatLog.setCreatedAt(rs.getTimestamp("created_at"));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			db.closeConnection(conn, pstmt);
+			db.closeConnection(conn, pstmt, rs);
 		}
+		return chatLog;
 	}
 }
