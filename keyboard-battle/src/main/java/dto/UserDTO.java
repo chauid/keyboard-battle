@@ -10,6 +10,8 @@ public class UserDTO {
 	private int level;
 	private int currentExp;
 	private int playCount;
+	private int winCount;
+	private int defeatCount;
 	private int highScore;
 	private String thumbnailImage;
 	private String description;
@@ -66,6 +68,22 @@ public class UserDTO {
 
 	public void setPlayCount(int playCount) {
 		this.playCount = playCount;
+	}
+
+	public int getWinCount() {
+		return winCount;
+	}
+
+	public void setWinCount(int winCount) {
+		this.winCount = winCount;
+	}
+
+	public int getDefeatCount() {
+		return defeatCount;
+	}
+
+	public void setDefeatCount(int defatCount) {
+		this.defeatCount = defatCount;
 	}
 
 	public void setCurrentExp(int currentExp) {

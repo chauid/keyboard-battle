@@ -99,10 +99,19 @@ main {
   display: flex;
   padding-top: 20px;
   flex-direction: column;
+  justify-content: space-between;
   align-items: center;
   width: calc(100% - 200px);
   height: calc(100vh - 60px);
   background-color: #d1cdec;
+}
+
+.main-first {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 main .main-menu {
@@ -139,7 +148,7 @@ main .main-menu {
 
 main .room-list {
   width: 95%;
-  height: 65%;
+  height: 95%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -156,7 +165,7 @@ main .room-list table {
 main .room-list table th,
 main .room-list table td {
   border: 1px solid black;
-  padding: 5px 10px;
+  padding: 10px;
 }
 
 main .room-list table th {
@@ -238,7 +247,7 @@ main .chat-box-message-input {
 }
 
 main .chat-box-message-input input {
-  width: 80%;
+  width: calc(100% - 80px);
   height: 30px;
   margin: 0 10px;
 }

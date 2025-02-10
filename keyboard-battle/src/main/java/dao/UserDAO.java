@@ -50,6 +50,8 @@ public class UserDAO {
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
 				user.setPlayCount(rs.getInt("play_count"));
+				user.setWinCount(rs.getInt("win_count"));
+				user.setDefeatCount(rs.getInt("defeat_count"));
 				user.setHighScore(rs.getInt("high_score"));
 				user.setThumbnailImage(rs.getString("thumbnail_image"));
 				user.setDescription(rs.getString("description"));
@@ -84,6 +86,8 @@ public class UserDAO {
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
 				user.setPlayCount(rs.getInt("play_count"));
+				user.setWinCount(rs.getInt("win_count"));
+				user.setDefeatCount(rs.getInt("defeat_count"));
 				user.setHighScore(rs.getInt("high_score"));
 				user.setThumbnailImage(rs.getString("thumbnail_image"));
 				user.setDescription(rs.getString("description"));
@@ -117,6 +121,8 @@ public class UserDAO {
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
 				user.setPlayCount(rs.getInt("play_count"));
+				user.setWinCount(rs.getInt("win_count"));
+				user.setDefeatCount(rs.getInt("defeat_count"));
 				user.setHighScore(rs.getInt("high_score"));
 				user.setThumbnailImage(rs.getString("thumbnail_image"));
 				user.setDescription(rs.getString("description"));
@@ -150,6 +156,8 @@ public class UserDAO {
 				user.setLevel(rs.getInt("level"));
 				user.setCurrentExp(rs.getInt("current_exp"));
 				user.setPlayCount(rs.getInt("play_count"));
+				user.setWinCount(rs.getInt("win_count"));
+				user.setDefeatCount(rs.getInt("defeat_count"));
 				user.setHighScore(rs.getInt("high_score"));
 				user.setThumbnailImage(rs.getString("thumbnail_image"));
 				user.setDescription(rs.getString("description"));
@@ -166,17 +174,21 @@ public class UserDAO {
 	public void updateUser(UserDTO user) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
-		String query = "UPDATE user SET email = ?, password = ?, nickname = ?, level = ?, current_exp = ?, high_score = ? WHERE id = ?";
+		String query = "UPDATE user SET nickname = ?, level = ?, current_exp = ?, play_count = ?, win_count = ?, defeat_count = ?, high_score = ?, thumbnail_image = ?, description = ?, title = ? WHERE id = ?";
 
 		try {
 			pstmt = conn.prepareStatement(query);
-			pstmt.setString(1, user.getEmail());
-			pstmt.setString(2, user.getPassword());
-			pstmt.setString(3, user.getNickname());
-			pstmt.setInt(4, user.getLevel());
-			pstmt.setInt(5, user.getCurrentExp());
-			pstmt.setInt(6, user.getHighScore());
-			pstmt.setInt(7, user.getId());
+			pstmt.setString(1, user.getNickname());
+			pstmt.setInt(2, user.getLevel());
+			pstmt.setInt(3, user.getCurrentExp());
+			pstmt.setInt(4, user.getPlayCount());
+			pstmt.setInt(5, user.getWinCount());
+			pstmt.setInt(6, user.getDefeatCount());
+			pstmt.setInt(7, user.getHighScore());
+			pstmt.setString(8, user.getThumbnailImage());
+			pstmt.setString(9, user.getDescription());
+			pstmt.setInt(10, user.getTitle());
+			pstmt.setInt(11, user.getId());
 			pstmt.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();

@@ -22,30 +22,38 @@ public class FreeChat {
 
 	@OnOpen
 	public void onOpen(Session session) {
-//		System.out.println(session.getId() + " 접속");
 		clients.add(session); // 세션 추가
+		String message = "client:" + clients.size();
+		for (Session client : clients) {
+			try {
+				client.getBasicRemote().sendText(message);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	@OnMessage
 	public void onMessage(String message, Session session) throws IOException {
 		synchronized (clients) {
+			String chatMessage = "chat:" + message;
 			String chatClient = message.split(":")[0];
 			String chatMsg = message.split(":")[1];
 			UserDAO userDAO = new UserDAO();
 			UserDTO user = new UserDTO();
 			user = userDAO.readUserByNickname(chatClient);
-			
+
 			ChatLogDAO chatLogDAO = new ChatLogDAO();
 			ChatLogDTO chatLog = new ChatLogDTO();
 			chatLog.setUserId(user.getId());
 			chatLog.setMessage(chatMsg);
 			chatLog.setPlace(ChatLogDTO.Place.FREE);
 			chatLogDAO.createChatLog(chatLog);
-			
+
 			for (Session client : clients) {
 //				System.out.println(session.getId() + " : " + message);
 				if (!client.equals(session)) { // 메시지를 보낸 클라이언트는 제외
-					client.getBasicRemote().sendText(message);
+					client.getBasicRemote().sendText(chatMessage);
 				}
 			}
 		}
@@ -54,14 +62,18 @@ public class FreeChat {
 	@OnClose
 	public void onClose(Session session) {
 		clients.remove(session);
+		String message = "client:" + clients.size();
+		for (Session client : clients) {
+			try {
+				client.getBasicRemote().sendText(message);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	@OnError
 	public void onError(Throwable e) {
 		e.printStackTrace();
-	}
-	
-	public static int getNumberOfClients() {
-		return clients.size();
 	}
 }

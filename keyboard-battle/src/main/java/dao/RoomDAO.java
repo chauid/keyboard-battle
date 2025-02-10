@@ -136,6 +136,55 @@ public class RoomDAO {
 		return list;
 	}
 
+	public RoomDTO readRoomById(String roomId) {
+		RoomDTO room = null;
+		Connection conn = db.getConnection();
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		String query = "SELECT * FROM room WHERE id = ?";
+
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, roomId);
+			rs = pstmt.executeQuery();
+			if (rs.next()) {
+				room = new RoomDTO();
+				room.setId(rs.getString("id"));
+				room.setUserId(rs.getInt("user_id"));
+				room.setName(rs.getString("name"));
+				room.setPassword(rs.getString("password"));
+				room.setAllowSpectator(rs.getBoolean("allow_spectator"));
+				room.setIngame(rs.getBoolean("is_ingame"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.closeConnection(conn, pstmt, rs);
+		}
+		return room;
+	}
+
+	public void updateRoom(RoomDTO room) {
+		Connection conn = db.getConnection();
+		PreparedStatement pstmt = null;
+		String query = "UPDATE room SET user_id = ?, name = ?, password = ?, allow_spectator = ?, is_ingame = ? WHERE id = ?";
+
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, room.getUserId());
+			pstmt.setString(2, room.getName());
+			pstmt.setString(3, room.getPassword());
+			pstmt.setBoolean(4, room.isAllowSpectator());
+			pstmt.setBoolean(5, room.isIngame());
+			pstmt.setString(6, room.getId());
+			pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.closeConnection(conn, pstmt);
+		}
+	}
+
 	public void deleteRoom(String roomId) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;

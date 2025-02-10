@@ -27,5 +27,6 @@ for (HttpSession s : sessionSet) {
 
 response.setContentType("application/json");
 response.setCharacterEncoding("UTF-8");
+response.setStatus(200);
 response.getWriter().print(userList);
 %>

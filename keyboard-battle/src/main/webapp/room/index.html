@@ -4,8 +4,88 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>게임 대기실</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script>
+      let roomId = new URLSearchParams(window.location.search).get("id");
+      let userId = null;
+
+      $(document).ready(function () {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.startsWith("userid=")) {
+            userId = cookie.substring("userid=".length, cookie.length);
+            break;
+          }
+        }
+        console.log(userId);
+
+        const ws = new WebSocket("/keyboard-battle/room-chat/" + roomId);
+        ws.onopen = function () {
+          // console.log('connected');
+        };
+        ws.onmessage = function (event) {
+          const msgType = event.data.split(":")[0];
+          if (msgType === "client") {
+            const loginUserCount = event.data.split(":")[1];
+            $("#chat-status").text("채팅 [" + loginUserCount.trim() + "명]");
+            //console.log(msgType, loginUserCount);
+          } else if (msgType === "chat") {
+            const user = event.data.split(":")[1];
+            const message = event.data.split(":")[2];
+            const chatBody = document.getElementById("chat-box-body");
+            chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${user}</span><span class="chat-message">\${message}</span></div>`;
+            const messageBox = document.querySelector(".message-box");
+            chatBody.scrollTop = chatBody.scrollHeight;
+          } else {
+            console.log("unknown message type");
+          }
+        };
+        ws.onclose = function () {
+          // console.log('disconnected');
+        };
+        ws.onerror = function () {
+          // console.log('error');
+        };
+
+        function sendMessage() {
+          const chatInput = $("#chat-input").val();
+          const nickname = $("#user-name").text();
+          const chatMessage = `\${nickname}:\${chatInput}`;
+          // console.log(chatMessage);
+          const chatBody = document.getElementById("chat-box-body");
+          chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${nickname}</span><span class="chat-message">\${chatInput}</span></div>`;
+          const messageBox = document.querySelector(".message-box");
+          chatBody.scrollTop = chatBody.scrollHeight;
+          $("#chat-input").val("");
+          ws.send(chatMessage);
+        }
+      });
+
+
+      $(".ready-btn").click(function () {
+        alert("준비 완료!");
+      });
+
+
+      $("#exit-button").click(function () {
+        //console.log(userId);
+        window.location.href = "/keyboard-battle/free-channel";
+        console.log("object");
+      });
+    </script>
   </head>
   <style>
     body {
@@ -14,136 +94,219 @@
       color: #333;
       margin: 0;
       padding: 0;
-  }
-  
-  .container {
+    }
+
+    .container {
       width: 80%;
       margin: 20px auto;
       padding: 10px;
       background-color: #ffffff;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .header {
+    }
+
+    .header {
       display: flex;
       justify-content: space-between;
       padding: 10px;
-      background-color: #87CEEB;
+      background-color: #87ceeb;
       border-radius: 10px 10px 0 0;
       color: white;
-  }
-  
-  .room-title {
+    }
+
+    .room-title {
       font-size: 20px;
       font-weight: bold;
-  }
-  
-  .exit-btn {
+    }
+
+    .exit-btn {
       background-color: #ff6666;
       color: white;
       border: none;
       padding: 8px 15px;
       cursor: pointer;
       border-radius: 5px;
-  }
-  
-  .exit-btn:hover {
+    }
+
+    .exit-btn:hover {
       background-color: #ff4d4d;
-  }
-  
-  .main {
+    }
+
+    .main {
       display: flex;
       justify-content: space-between;
       padding: 10px;
-  }
-  
-  .players, .spectators {
+    }
+
+    .players,
+    .spectators {
       width: 48%;
       background-color: #e6f7ff;
       padding: 10px;
       border-radius: 5px;
-  }
-  
-  .player-box, .spectator {
+    }
+
+    .player-box,
+    .spectator {
       background-color: #cceeff;
       padding: 10px;
       margin: 5px 0;
       border-radius: 5px;
-  }
-  
-  .footer {
+    }
+
+    .footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px;
-      background-color: #87CEEB;
+      background-color: #87ceeb;
       border-radius: 0 0 10px 10px;
       color: white;
-  }
-  
-  .my-info, .chat-box {
+    }
+
+    .my-info,
+    .chat-box {
       width: 45%;
       background-color: #e6f7ff;
       padding: 10px;
       border-radius: 5px;
-  }
-  
-  .ready-btn {
-      background-color: #4CAF50;
+    }
+
+    .ready-btn {
+      background-color: #4caf50;
       color: white;
       border: none;
       padding: 8px 15px;
       cursor: pointer;
       border-radius: 5px;
-  }
-  
-  .ready-btn:hover {
+    }
+
+    .ready-btn:hover {
       background-color: #45a049;
-  }
-  
+    }
+    .player-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .player-info {
+      display: flex;
+      align-items: center;
+    }
+
+    .player-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .player-img img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .player-name {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .player-level {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .player-exp {
+      font-size: 14px;
+      margin: 0 10px;
+    }
+
+    .spectator-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .spectator-box {
+      background-color: #cceeff;
+      padding: 10px;
+      border-radius: 5px;
+    }
   </style>
   <body>
+    <button id="DD">DD</button>
     <div class="container">
       <div class="header">
         <div class="room-title">방 제목</div>
-        <button class="exit-btn">나가기</button>
+        <button id="exit-button" class="exit-btn">나가기</button>
       </div>
       <div class="main">
         <div class="players">
           <div class="player-box">
-            <div class="player-title">플레이어 1</div>
-            <div class="player-info">플레이어1 정보</div>
-            <div>asd</div>
+            <div class="player-title">플레이어 1(나)</div>
+            <div class="player-info">
+              <figure class="player-img">
+                <img
+                  id="player1-image"
+                  src="/keyboard-battle/images/no-image.png"
+                  alt=""
+                />
+              </figure>
+              <p id="player1-name" class="player-name"></p>
+              <p id="player1-level" class="player-level">레벨</p>
+              <span class="player-exp">exp</span>
+              <div style="display: inline">
+                <span id="player1-exp"></span> <span> / </span>
+                <span id="player1-max-exp"> </span>
+              </div>
+            </div>
           </div>
           <div class="player-box">
-            <div class="player-title">플레이어 2</div>
-            <div class="player-info">플레이어2 정보</div>
+            <div class="player-title">플레이어 2(상대)</div>
+            <div class="player-info">
+              <div class="player-info">
+                <figure class="player-img">
+                  <img
+                    id="player2-image"
+                    src="/keyboard-battle/images/no-image.png"
+                    alt=""
+                  />
+                </figure>
+                <p id="player2-name" class="player-name"></p>
+                <p id="player2-level" class="player-level">레벨</p>
+                <span class="player2-exp">exp</span>
+                <div style="display: inline">
+                  <span id="player2-exp"></span> <span> / </span>
+                  <span id="player2-max-exp"> </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="spectators">
           <div class="spectator-title">관전자 목록</div>
-          <div class="spectator">관전자1</div>
+          <div class="spectator-box"></div>
+          <!-- <div class="spectator">관전자1</div>
           <div class="spectator">관전자2</div>
-          <div class="spectator">관전자3</div>
+          <div class="spectator">관전자3</div> -->
         </div>
       </div>
       <div class="footer">
         <div class="my-info">내 정보</div>
-        <button class="ready-btn">준비</button>
-        <div class="chat-box">채팅창</div>
+        <button id="ready-button" class="ready-btn">준비</button>
+        <div class="chat-box">
+          <div id="chat-box-body" class="chat-box-body">
+            <!-- <div class="message-box">
+                        <span class="chat-user">유저 이름</span>
+                        <span class="chat-message">메시지</span>
+                    </div> -->
+          </div>
+          <div class="chat-box-message-input">
+            <input id="chat-input" type="text" placeholder="메시지 입력">
+            <button id="chat-send">전송</button>
+          </div>
+        </div>
       </div>
     </div>
-
-    <script>
-      $(document).ready(function () {
-        $(".ready-btn").click(function () {
-          alert("준비 완료!");
-        });
-        $(".exit-btn").click(function () {
-          alert("방을 나갑니다.");
-        });
-      });
-    </script>
   </body>
 </html>

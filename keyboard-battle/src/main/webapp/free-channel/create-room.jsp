@@ -9,6 +9,10 @@ room.setName(request.getParameter("room-name"));
 room.setPassword(request.getParameter("room-password"));
 Object user = session.getAttribute("user");
 
+if(room.getPassword() != null) {
+	session.setAttribute("roompw", room.getPassword());
+}
+
 if (user != null) {
 	room.setUserId(Integer.parseInt(user.toString()));
 }
