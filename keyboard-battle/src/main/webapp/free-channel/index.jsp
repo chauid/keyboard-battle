@@ -14,7 +14,7 @@
 <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
 <script src="/keyboard-battle/jquery.twbsPagination.min.js"></script>
 <script>
-			let userLocation;
+			let userLocation = "";
 			let searchInput = "";
 			let searchPage = 1;
 			let totalPage = 1;
@@ -244,9 +244,12 @@
 				};
 
 				function sendMessage() {
-					const chatInput = $('#chat-input').val();
+					const chatInput = $('#chat-input').val().trim();
 					const nickname = $('#user-name').text();
 					const chatMessage = `\${nickname}:\${chatInput}`;
+					if(chatInput === '' || chatInput === null) {
+						return;
+					}
 					// console.log(chatMessage);
 					const chatBody = document.getElementById('chat-box-body');
 					chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${nickname}</span><span class="chat-message">\${chatInput}</span></div>`;

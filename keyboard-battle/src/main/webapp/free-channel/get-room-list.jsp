@@ -8,6 +8,8 @@
 <%@page import="dao.RoomDAO"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
+Object userSession = session.getAttribute("user");
+
 String keyword = request.getParameter("keyword");
 String pageString = request.getParameter("page");
 
@@ -19,7 +21,7 @@ JSONArray roomList = new JSONArray();
 if (keyword == null) {
 	keyword = "";
 }
-if(pageString == null || pageString.equals("")) {
+if (pageString == null || pageString.equals("")) {
 	pageString = "1";
 }
 int totalCount = roomDao.readRoomCountBySearch(keyword);

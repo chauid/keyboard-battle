@@ -10,7 +10,7 @@ body {
 	margin: 0;
 }
 
-header {
+header.root-header {
 	position: fixed;
 	top: 0;
 	width: 100%;
@@ -24,35 +24,35 @@ header {
 	padding: 10px 20px;
 }
 
-header nav ul {
+header.root-header nav ul {
 	display: flex;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-header nav ul li {
+header.root-header nav ul li {
 	margin-left: 20px;
 }
 
-header nav ul li a {
+header.root-header nav ul li a {
 	text-decoration: none;
 	color: #000;
 	font-weight: bold;
 }
 
-header h1 {
+header.root-header h1 {
 	margin: 0;
 }
 
-header h1 a {
+header.root-header h1 a {
 	text-decoration: none;
 	color: #000;
 }
 </style>
 </head>
 <body>
-	<header>
+	<header class="root-header">
 		<h1>
 			<a href="/keyboard-battle">Keyboard Battle</a>
 		</h1>

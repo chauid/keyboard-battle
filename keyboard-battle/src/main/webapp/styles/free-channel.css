@@ -196,6 +196,7 @@ main .nav-pagination {
 
 main .chat-box {
   width: 100%;
+  min-height: 28%;
   height: 28%;
   background-color: #e0e0e0;
   padding: 10px;

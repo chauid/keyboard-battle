@@ -3,6 +3,7 @@ package dto;
 public class UserRoomDTO {
 	private int userId;
 	private String roomId;
+	private String socketSessionId;
 	private boolean isIngame;
 	private boolean isReady;
 
@@ -16,6 +17,14 @@ public class UserRoomDTO {
 
 	public String getRoomId() {
 		return roomId;
+	}
+
+	public String getSocketSessionId() {
+		return socketSessionId;
+	}
+
+	public void setSocketSessionId(String socketSessionId) {
+		this.socketSessionId = socketSessionId;
 	}
 
 	public void setRoomId(String roomId) {

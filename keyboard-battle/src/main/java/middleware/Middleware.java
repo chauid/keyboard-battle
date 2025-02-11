@@ -25,6 +25,7 @@ public class Middleware implements Filter {
 		HttpServletResponse res = (HttpServletResponse) response;
 
 		Object currentSession = req.getSession().getAttribute("user");
+		Set<HttpSession> sessionSet = SessionTracker.getActiveSessions();
 
 		if (currentSession != null) { // 인증 성공
 			chain.doFilter(request, response);
@@ -58,7 +59,6 @@ public class Middleware implements Filter {
 		}
 
 		boolean isSessionExist = false;
-		Set<HttpSession> sessionSet = SessionTracker.getActiveSessions();
 		for (HttpSession curSession : sessionSet) {
 			String curSessionId = curSession.getId();
 //			System.out.println("sessionDTO.getSessionId(): " + sessionDTO.getSessionId());
@@ -78,13 +78,11 @@ public class Middleware implements Filter {
 						break;
 					}
 				}
-				req.getSession().invalidate(); // 현재 세션 삭제
 				isSessionExist = true;
 				break;
 			}
 		}
 
-//		System.out.println("session count: " + sessionSet.size());
 //		sessionSet.forEach(session -> {
 //			System.out.println("session id: " + session.getId());
 //		});

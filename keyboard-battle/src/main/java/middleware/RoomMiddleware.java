@@ -1,12 +1,10 @@
 package middleware;
 
 import java.io.IOException;
-import java.util.List;
 
 import dao.RoomDAO;
 import dao.UserRoomDAO;
 import dto.RoomDTO;
-import dto.UserRoomDTO;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,8 +32,8 @@ public class RoomMiddleware implements Filter {
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO roomDto = roomDao.readRoomById(roomId);
 		UserRoomDAO userRoomDao = new UserRoomDAO();
-		List<UserRoomDTO> userList = userRoomDao.readUserRoomByRoomId(roomId);
-		int userCount = userList.size();
+		int userCount = userRoomDao.readUserRoomCountByRoomId(roomId);
+		int userId = Integer.parseInt(userSession.toString());
 
 		if (roomDto == null) { // 방 정보가 없음
 //			System.out.println("방 정보가 없음");
@@ -44,35 +42,39 @@ public class RoomMiddleware implements Filter {
 		}
 
 		boolean allowSpectator = roomDto.isAllowSpectator();
-		System.out.println("client: " + userCount);
+//		System.out.println("client: " + userCount);
 
 		if (roomDto.getPassword() == null || roomDto.getPassword().equals("")) { // 비밀번호가 없는 방
 //			System.out.println("비밀번호가 없는 방");
 			if (allowSpectator) {
 				if (userCount > 10) { // 10명 인원 제한
+					userRoomDao.deleteUserRoomByUserId(userId);
 					res.sendRedirect("/keyboard-battle/free-channel");
 					return;
 				}
-				userRoomDao.createUserRoom(Integer.parseInt(userSession.toString()), roomId);
+				userRoomDao.createUserRoom(userId, roomId);
 				chain.doFilter(request, response);
 				return;
 			} else {
 				if (userCount > 2) { // 2명 인원 제한
+					userRoomDao.deleteUserRoomByUserId(userId);
 					res.sendRedirect("/keyboard-battle/free-channel");
 					return;
 				}
-				userRoomDao.createUserRoom(Integer.parseInt(userSession.toString()), roomId);
+				userRoomDao.createUserRoom(userId, roomId);
 				chain.doFilter(request, response);
 				return;
 			}
 		} else {
 			if (passwordSession == null) { // 세션에 비밀번호가 없음
 //				System.out.println("세션에 비밀번호가 없음");
+				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/keyboard-battle/free-channel");
 				return;
 			}
 			if (!roomDto.getPassword().equals(passwordSession.toString())) { // 비밀번호가 일치하지 않음
 //				System.out.println("비밀번호가 일치하지 않음");
+				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/keyboard-battle/free-channel");
 				return;
 			}
@@ -80,18 +82,20 @@ public class RoomMiddleware implements Filter {
 
 		if (allowSpectator) {
 			if (userCount > 10) { // 10명 인원 제한
+				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/keyboard-battle/free-channel");
 				return;
 			}
-			userRoomDao.createUserRoom(Integer.parseInt(userSession.toString()), roomId);
+			userRoomDao.createUserRoom(userId, roomId);
 			chain.doFilter(request, response);
 			return;
 		} else {
 			if (userCount > 2) { // 2명 인원 제한
+				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/keyboard-battle/free-channel");
 				return;
 			}
-			userRoomDao.createUserRoom(Integer.parseInt(userSession.toString()), roomId);
+			userRoomDao.createUserRoom(userId, roomId);
 			chain.doFilter(request, response);
 			return;
 		}

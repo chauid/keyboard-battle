@@ -13,6 +13,11 @@ if (userSession != null) {
 UserDAO userDao = new UserDAO();
 UserDTO user = userDao.readUserById(userId);
 
+if(user == null) {
+	response.setStatus(401);
+	return;
+}
+
 response.setContentType("application/json");
 response.setCharacterEncoding("UTF-8");
 JSONObject json = new JSONObject();

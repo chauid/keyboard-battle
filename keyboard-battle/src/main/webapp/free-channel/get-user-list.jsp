@@ -7,6 +7,8 @@
 <%@page import="dto.UserDTO"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
+Object userSessionObject = session.getAttribute("user");
+
 Set<HttpSession> sessionSet = SessionTracker.getActiveSessions();
 UserDAO userDao = new UserDAO();
 List<UserDTO> users = userDao.readAllUser();

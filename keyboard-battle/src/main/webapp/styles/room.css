@@ -1,0 +1,150 @@
+@charset "UTF-8";
+
+body * {
+  font-family: "Pretendard Variable", sans-serif;
+}
+
+body {
+    background-color: #f0f0f5;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    width: 80%;
+    margin: 20px auto;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #87ceeb;
+    border-radius: 10px 10px 0 0;
+    color: white;
+  }
+
+  .room-title {
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .exit-btn {
+    background-color: #ff6666;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  .exit-btn:hover {
+    background-color: #ff4d4d;
+  }
+
+  .main {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+  }
+
+  .players,
+  .spectators {
+    width: 48%;
+    background-color: #e6f7ff;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+  .player-box,
+  .spectator {
+    background-color: #cceeff;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #87ceeb;
+    border-radius: 0 0 10px 10px;
+    color: white;
+  }
+
+  .my-info,
+  .chat-box {
+    width: 45%;
+    background-color: #e6f7ff;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+  .ready-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  .ready-btn:hover {
+    background-color: #45a049;
+  }
+
+  .player-title {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .player-info {
+    display: flex;
+    align-items: center;
+  }
+
+  .player-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .player-img img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .player-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  .player-level {
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .player-exp {
+    font-size: 14px;
+    margin: 0 10px;
+  }
+
+  .spectator-title {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .spectator-box {
+    background-color: #cceeff;
+    padding: 10px;
+    border-radius: 5px;
+  }
