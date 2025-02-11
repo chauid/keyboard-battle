@@ -1,531 +1,488 @@
 <!DOCTYPE html>
 <html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>게임 대기실</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <link rel="stylesheet" href="/keyboard-battle/styles/room.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script>
+      let roomId = new URLSearchParams(window.location.search).get("id");
+      let userId = "";
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>게임 대기실</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-  <script>
-    let roomId = new URLSearchParams(window.location.search).get("id");
-    let userId = "";
+      $(document).ready(function () {
+        setTimeout(() => {
+          const value = `; ${document.cookie}`;
+          const parts = value.split("; userid=");
+          if (parts.length === 2) {
+            userId = parts.pop().split(";").shift();
+          }
+          ws.send("new:" + userId);
+        }, 10);
 
-    $(document).ready(function () {
-      setTimeout(() => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split('; userid=');
-        if (parts.length === 2) {
-          userId = parts.pop().split(';').shift();
-        }
-        ws.send("new:" + userId);
-      }, 10);
+        $('[data-bs-toggle="tooltip"]').tooltip();
 
-      const ws = new WebSocket("/keyboard-battle/room-chat/" + roomId);
-      ws.onopen = function () {
-        // console.log('connected');
-      };
-      ws.onmessage = function (event) {
-        const msgType = event.data.split(":")[0];
-        switch (msgType) {
-          case "client":
+        const ws = new WebSocket("/keyboard-battle/room-chat/" + roomId);
+        ws.onopen = function () {
+          // console.log('connected');
+        };
+        ws.onmessage = function (event) {
+          console.log(event.data);
+          const msgType = event.data.split(":")[0];
+          console.log(msgType);
+          switch (msgType) {
+            case "client":
+              break;
+            case "chat":
+              break;
 
+            case "move":
+              break;
+            case "remove":
+              break;
+            case "host":
+              break;
+            case "ready":
+              break;
+            case "start":
+              break;
+            default:
+              console.log("unknown message type");
+              break;
+          }
+          if (msgType === "client") {
+            const loginUserCount = event.data.split(":")[1];
+            $("#chat-status").text("채팅 [" + loginUserCount.trim() + "명]");
+            //console.log(msgType, loginUserCount);
+          } else if (msgType === "chat") {
+            const user = event.data.split(":")[1];
+            const message = event.data.split(":")[2];
+            const chatBody = document.getElementById("chat-box-body");
+            chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${user}</span><span class="chat-message">\${message}</span></div>`;
+            const messageBox = document.querySelector(".message-box");
+            chatBody.scrollTop = chatBody.scrollHeight;
+          }
+        };
+        ws.onclose = function () {
+          // console.log('disconnected');
+        };
+        ws.onerror = function () {
+          // console.log('error');
+        };
 
-            break;
-          case "chat":
+        // ws.send("new:" + userId);
 
-            break;
-
-          case "new":
-
-            break;
-          case "move":
-
-            break;
-          case "ready":
-
-            break;
-          default:
-            break;
-        }
-        if (msgType === "client") {
-          const loginUserCount = event.data.split(":")[1];
-          $("#chat-status").text("채팅 [" + loginUserCount.trim() + "명]");
-          //console.log(msgType, loginUserCount);
-        } else if (msgType === "chat") {
-          const user = event.data.split(":")[1];
-          const message = event.data.split(":")[2];
+        function sendMessage() {
+          const chatInput = $("#chat-input").val();
+          const nickname = $("#user-name").text();
+          const chatMessage = `\${nickname}:\${chatInput}`;
+          // console.log(chatMessage);
           const chatBody = document.getElementById("chat-box-body");
-          chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${user}</span><span class="chat-message">\${message}</span></div>`;
+          chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${nickname}</span><span class="chat-message">\${chatInput}</span></div>`;
           const messageBox = document.querySelector(".message-box");
           chatBody.scrollTop = chatBody.scrollHeight;
-        } else {
-          console.log("unknown message type");
+          $("#chat-input").val("");
+          ws.send(chatMessage);
         }
-      };
-      ws.onclose = function () {
-        // console.log('disconnected');
-      };
-      ws.onerror = function () {
-        // console.log('error');
-      };
 
-      // ws.send("new:" + userId);
+        $("#ready-button").click(function () {
+          alert("준비 완료!");
+        });
 
-      function sendMessage() {
-        const chatInput = $("#chat-input").val();
-        const nickname = $("#user-name").text();
-        const chatMessage = `\${nickname}:\${chatInput}`;
-        // console.log(chatMessage);
-        const chatBody = document.getElementById("chat-box-body");
-        chatBody.innerHTML += `<div class="message-box"><span class="chat-user">\${nickname}</span><span class="chat-message">\${chatInput}</span></div>`;
-        const messageBox = document.querySelector(".message-box");
-        chatBody.scrollTop = chatBody.scrollHeight;
-        $("#chat-input").val("");
-        ws.send(chatMessage);
-      }
-
-      $("#ready-button").click(function () {
-        alert("준비 완료!");
+        $("#exit-button").on("click", function () {
+          //console.log(userId);
+          window.location.href = "/keyboard-battle/free-channel";
+          console.log("object");
+        });
       });
-
-
-      $("#exit-button").on('click', function () {
-        //console.log(userId);
-        window.location.href = "/keyboard-battle/free-channel";
-        console.log("object");
-      });
-    });
-  </script>
-</head>
-<style>
-
-  body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #101053, #385cbd);
-  }
-
-  figure {
-    margin: 0;
-  }
-
-  .container {
-    min-width: 920px;
-    width: 1500px;
-    height: 800px;
-    min-height: 800px;
-    max-height: 800px;
-    margin: 20px auto;
-    padding: 10px;
-    background-color: #6bd5ff;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-  }
-
-  .room-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 20px;
-    background-color: #dbdbff;
-    border-radius: 10px;
-    padding: 5px 10px;
-
-    .room-header-title {
-      padding: 10px 5px;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .exit-button {
-      padding: 10px 20px;
-    }
-    .exit-button:active {
-      transform: scale(0.95);
-      transition: transform 200ms ease;
-    }
-
-  }
-
-  .main {
-    padding: 10px;
-    width: 100%;
-    height: 500px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    background-color: #c3e9ff;
-  }
-
-  .players {
-    width: 50%;
-    float: left;
-    height: 100%;
-    min-height: 100%;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    background-color: #d0d0ff;
-    border-radius: 10px;
-
-    .player {
-      width: 45%;
-      height: 70%;
-      padding: 5px;
-      background-color: #7c8b94;
-      border-radius: 10px;
-    }
-    
-    .player-header {
-      display: flex;
-      height: 50px;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #5d88a1;
-      border-radius: 10px;
-    }
-
-    .player-header-box {
-      margin-left: 10px;
-      background-color: #a4afb6;
-    }
-
-    .player-move {
-      padding: 5px 10px;
-    }
-
-    .player-move:active {
-      transform: scale(0.95);
-      transition: transform 200ms ease;
-
-    }
-
-    .player-info {
-      display: flex;
-      width: 100%;
-      height: calc(100% - 50px);
-      gap: 10px;
-      padding: 10px;
-      background-color: #d1e4ee;
-    }
-
-    .player-image {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      overflow: hidden;
-      background-color: #ffffff;
-    }
-
-    .player-box {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .player-level {
-      font-weight: bold;
-    }
-
-    .player-nickname {
-      font-weight: bold;
-    }
-
-    .player-title {
-      font-weight: bold;
-    }
-
-    player-exp {
-      font-weight: bold;
-    }
-    
-    .player-exp-box {
-      display: flex;
-      gap: 5px;
-    }
-  }
-
-  .spectators {
-    width: 50%;
-    height: 100%;
-    float: right;
-    padding: 5px;
-    background-color: #6bd5ff;
-
-    .spectators-header {
-      font-weight: bold;
-      padding-left: 10px;
-      margin: 0;
-    }
-    .spectators-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 5px;
-    }
-
-    .spectator {
-      width: 100%;
-      padding: 7px 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #d1e4ee;
-      border-radius: 10px;
-    }
-
-    .spectator-info {
-      width: calc(100% - 60px);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background-color: #6e6eb9;
-    }
-
-    .spectator-image {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      overflow: hidden;
-      background-color: #ffffff;
-    }
-
-    .spectator-box {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 5px;
-      background-color: #afafc9;
-    }
-
-
-    .spectator-level {
-      font-weight: bold;
-    }
-
-    .spectator-nickname {
-      font-weight: bold;
-    }
-
-    .spectator-title {
-      font-size: small;
-    }
-
-    .spectator-move {
-      width: 55px;
-      padding: 5px 10px;
-    }
-
-    .spectator-move:active {
-      transform: scale(0.95);
-      transition: transform 200ms ease;
-    }
-  }
-  
-  
-</style>
-
-<body>
-  <div class="container">
-    <header class="room-header">
-      <h3 id="room-header-title" class="room-header-title">방 제목</h3>
-      <button id="exit-button" class="btn btn-danger exit-button">나가기</button>
-    </header>
-    <main class="main">
-      <div class="players">
-        <div class="player">
-          <div class="player-header">
-            <div class="player-header-box">
-              <span>플레이어 1</span>
-              <span id="space0-host"></span>
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <header class="room-header">
+        <h3 id="room-header-title" class="room-header-title">방 제목</h3>
+        <button id="exit-button" class="btn btn-danger exit-button">
+          나가기
+        </button>
+      </header>
+      <main class="main">
+        <div class="players">
+          <div class="player">
+            <div class="player-header">
+              <div class="player-header-box">
+                <span>플레이어 1</span>
+                <span id="space0-host">
+                  <figure
+                    class="host-figure"
+                    data-bs-toggle="tooltip"
+                    data-bs-title="방장입니다"
+                  >
+                    <img
+                      class="host-figure-image"
+                      src="/keyboard-battle/images/crown.png"
+                      alt=""
+                    />
+                  </figure>
+                </span>
+              </div>
+              <button id="space0-move" class="btn btn-secondary player-move">
+                이동
+              </button>
             </div>
-            <button id="space0-move" class="btn btn-secondary player-move">이동</button>
+            <div class="player-info">
+              <figure class="player-image">
+                <img
+                  id="space0-image"
+                  src="/keyboard-battle/images/white-image.png"
+                  alt=""
+                />
+              </figure>
+              <div class="player-box">
+                <div class="player-box-info">
+                  <span
+                    id="space0-level"
+                    class="badge text-bg-primary player-level"
+                    >3</span
+                  >
+                  <span id="space0-nickname" class="player-nickname"
+                    >우아앙</span
+                  >
+                  <span
+                    id="space0-title"
+                    class="badge text-bg-warning player-title"
+                    >숙련자</span
+                  >
+                </div>
+                <div class="player-exp-box">
+                  <span>exp</span>
+                  <span id="space0-exp">27</span> <span> / </span>
+                  <span id="space0-max-exp">30</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="player-info">
-            <figure class="player-image">
-              <img id="space0-image" src="/keyboard-battle/images/white-image.png" alt="" />
-            </figure>
-            <div class="player-box">
-              <span id="space0-level" class="player-level"></span>
-              <span id="space0-nickname" class="player-nickname"></span>
-              <span id="space0-title" class="player-title"></span>
-              <span class="player-exp">exp</span>
-              <div class="player-exp-box">
-                <span id="space0-exp"></span> <span> / </span>
-                <span id="space0-max-exp"> </span>
+          <div class="player">
+            <div class="player-header">
+              <div class="player-header-box">
+                <span>플레이어 2</span>
+                <span id="space1-host"></span>
+              </div>
+              <button id="space1-move" class="btn btn-secondary player-move">
+                이동
+              </button>
+            </div>
+            <div class="player-info">
+              <figure class="player-image">
+                <img
+                  id="space1-image"
+                  src="/keyboard-battle/images/white-image.png"
+                  alt=""
+                />
+              </figure>
+              <div class="player-box">
+                <span id="space1-level" class="player-level"></span>
+                <span id="space1-nickname" class="player-nickname"></span>
+                <span id="space1-title" class="player-title"></span>
+                <div class="player-exp-box">
+                  <span>exp</span>
+                  <span id="space1-exp">1</span> <span> / </span>
+                  <span id="space1-max-exp">3</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="player">
-          <div class="player-header">
-            <div class="player-header-box">
-              <span>플레이어 2</span>
-              <span id="space1-host"></span>
-            </div>
-            <button id="space1-move" class="btn btn-secondary player-move">이동</button>
-          </div>
-          <div class="player-info">
-            <figure class="player-image">
-              <img id="space1-image" src="/keyboard-battle/images/white-image.png" alt="" />
-            </figure>
-            <div class="player-box">
-              <span id="space1-level" class="player-level"></span>
-              <span id="space1-nickname" class="player-nickname"></span>
-              <span id="space1-title" class="player-title"></span>
-              <span class="player-exp">exp</span>
-              <div class="player-exp-box">
-                <span id="space1-exp"></span> <span> / </span>
-                <span id="space1-max-exp"> </span>
+        <div class="spectators">
+          <p class="spectators-header">관전자 목록</p>
+          <div class="spectators-list">
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space2-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space2-host">
+                    <figure
+                      class="host-figure"
+                      data-bs-toggle="tooltip"
+                      data-bs-title="방장입니다"
+                    >
+                      <img
+                        class="host-figure-image"
+                        src="/keyboard-battle/images/crown.png"
+                        alt=""
+                      />
+                    </figure>
+                  </span>
+                  <span
+                    id="space2-level"
+                    class="badge text-bg-primary spectator-level"
+                    >30</span
+                  >
+                  <span id="space2-nickname" class="spectator-nickname"
+                    >우우웅</span
+                  >
+                  <span
+                    id="space2-title"
+                    class="badge text-bg-light spectator-title"
+                    >초심자</span
+                  >
+                </div>
               </div>
+              <button
+                id="space2-move"
+                class="btn btn-secondary btn btn-secondary spectator-move"
+              >
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space3-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space3-level" class="spectator-level"></span>
+                  <span id="space3-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space3-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space3-host"></span>
+                </div>
+              </div>
+              <button id="space3-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space4-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space4-level" class="spectator-level"></span>
+                  <span id="space4-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space4-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space4-host"></span>
+                </div>
+              </div>
+              <button id="space4-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space5-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space5-level" class="spectator-level"></span>
+                  <span id="space5-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space5-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space5-host"></span>
+                </div>
+              </div>
+              <button id="space5-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space6-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space6-level" class="spectator-level"></span>
+                  <span id="space6-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space6-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space6-host"></span>
+                </div>
+              </div>
+              <button id="space6-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space7-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space7-level" class="spectator-level"></span>
+                  <span id="space7-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space7-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space7-host"></span>
+                </div>
+              </div>
+              <button id="space7-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space8-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space8-level" class="spectator-level"></span>
+                  <span id="space8-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space8-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space8-host"></span>
+                </div>
+              </div>
+              <button id="space8-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
+            </div>
+            <div class="spectator">
+              <div class="spectator-info">
+                <figure class="spectator-image">
+                  <img
+                    id="space9-image"
+                    src="/keyboard-battle/images/white-image.png"
+                    alt=""
+                  />
+                </figure>
+                <div class="spectator-box">
+                  <span id="space9-level" class="spectator-level"></span>
+                  <span id="space9-nickname" class="spectator-nickname"></span>
+                  <span
+                    id="space9-title"
+                    class="badge text-bg-light spectator-title"
+                  ></span>
+                  <span id="space9-host"></span>
+                </div>
+              </div>
+              <button id="space9-move" class="btn btn-secondary spectator-move">
+                이동
+              </button>
             </div>
           </div>
         </div>
-      </div>
-      <div class="spectators">
-        <p class="spectators-header">관전자 목록</p>
-        <div class="spectators-list">
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space2-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space2-level" class="spectator-level">30</span>
-                <span id="space2-nickname" class="spectator-nickname">우우웅</span>
-                <span id="space2-title" class="badge text-bg-light spectator-title">초심자</span>
-                <span id="space2-host"><i class="bi bi-flag-fill"></i></span>
-              </div>
+      </main>
+      <div class="sub">
+        <button id="ready-button" class="ready-button">준비</button>
+        <!-- <button id="start-button" class="ready-button">게임 시작</button> -->
+        <div class="chat-box">
+          <div id="chat-box-body" class="chat-box-body">
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space2-move" class="btn btn-secondary btn btn-secondary spectator-move">이동</button>
-          </div>
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space3-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space3-level" class="spectator-level"></span>
-                <span id="space3-nickname" class="spectator-nickname"></span>
-                <span id="space3-title" class="badge text-bg-light spectator-title"></span>
-                <span id="space3-host"></span>
-              </div>
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space3-move" class="btn btn-secondary spectator-move">이동</button>
-          </div>
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space4-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space4-level" class="spectator-level"></span>
-                <span id="space4-nickname" class="spectator-nickname"></span>
-                <span id="space4-title" class="badge text-bg-light spectator-title"></span>
-                <span id="space4-host"></span>
-              </div>
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space4-move" class="btn btn-secondary spectator-move">이동</button>
-          </div>
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space5-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space5-level" class="spectator-level"></span>
-                <span id="space5-nickname" class="spectator-nickname"></span>
-                <span id="space5-title" class="badge text-bg-light spectator-title"></span>
-                <span id="space5-host"></span>
-              </div>
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space5-move" class="btn btn-secondary spectator-move">이동</button>
-          </div>
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space6-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space6-level" class="spectator-level"></span>
-                <span id="space6-nickname" class="spectator-nickname"></span>
-                <span id="space6-title" class="badge text-bg-light spectator-title"></span>
-                <span id="space6-host"></span>
-              </div>
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space6-move" class="btn btn-secondary spectator-move">이동</button>
-          </div>
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space7-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space7-level" class="spectator-level"></span>
-                <span id="space7-nickname" class="spectator-nickname"></span>
-                <span id="space7-title" class="badge text-bg-light spectator-title"></span>
-                <span id="space7-host"></span>
-              </div>
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space7-move" class="btn btn-secondary spectator-move">이동</button>
-          </div>
-          <div class="spectator">
-            <div class="spectator-info">
-              <figure class="spectator-image">
-                <img id="space8-image" src="/keyboard-battle/images/white-image.png" alt="">
-              </figure>
-              <div class="spectator-box">
-                <span id="space8-level" class="spectator-level"></span>
-                <span id="space8-nickname" class="spectator-nickname"></span>
-                <span id="space8-title" class="badge text-bg-light spectator-title"></span>
-                <span id="space8-host"></span>
-              </div>
+            <div class="message-box">
+              <span class="chat-user">유저 이름</span>
+              <span class="chat-message">메시지</span>
             </div>
-            <button id="space8-move" class="btn btn-secondary spectator-move">이동</button>
           </div>
-        </div>
-      </div>
-    </main>
-    <div class="sub">
-      <button id="ready-button" class="ready-button">준비</button>
-      <div class="chat-box">
-        <p id="chat-status" class="chat-box-header">채팅 [0명]</p>
-        <div id="chat-box-body" class="chat-box-body">
-          <!-- <div class="message-box">
-            <span class="chat-user">유저 이름</span>
-            <span class="chat-message">메시지</span>
-          </div> -->
-        </div>
-        <div class="chat-box-message-input">
-          <input id="chat-input" type="text" placeholder="메시지 입력">
-          <button id="chat-send">전송</button>
+          <input
+            id="chat-input"
+            class="form-control chat-input"
+            type="text"
+            placeholder="메시지 입력"
+          />
         </div>
       </div>
     </div>
-  </div>
-  <!-- User Info Modal -->
-  <div class="modal fade" id="user-info" tabindex="-1" aria-labelledby="user-info-label" aria-hidden="true">
-    <div id="user-info-modal" class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="user-info-label">Modal title</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          ...
+    <!-- User Info Modal -->
+    <div
+      class="modal fade"
+      id="user-info"
+      tabindex="-1"
+      aria-labelledby="user-info-label"
+      aria-hidden="true"
+    >
+      <div id="user-info-modal" class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="user-info-label">Modal title</h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">...</div>
         </div>
       </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>

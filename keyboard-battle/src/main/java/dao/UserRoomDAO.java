@@ -45,7 +45,20 @@ public class UserRoomDAO {
 	public void createUserRoom(UserRoomDTO userRoom) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
-		String query = "INSERT INTO user_room (user_id, room_id, socket_session_id, is_ingame, is_ready) VALUES (?, ?, ?, ?, ?)";
+		
+		String query = "SELECT * FROM user_room WHERE user_id = ?";
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, userRoom.getUserId());
+			ResultSet rs = pstmt.executeQuery();
+			if (rs.next()) {
+				return;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		query = "INSERT INTO user_room (user_id, room_id, socket_session_id, is_ingame, is_ready) VALUES (?, ?, ?, ?, ?)";
 
 		try {
 			pstmt = conn.prepareStatement(query);
