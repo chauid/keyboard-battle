@@ -40,21 +40,34 @@ figure {
   background-color: #dbdbff;
   border-radius: 10px;
   padding: 5px 10px;
+}
 
-  .room-header-title {
-    margin: 0px;
-    padding: 10px 5px;
-    font-size: 1.5rem;
-    font-weight: bold;
-  }
+.room-header-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-  .exit-button {
-    padding: 10px 20px;
-  }
-  .exit-button:active {
-    transform: scale(0.95);
-    transition: transform 200ms ease;
-  }
+.room-header-title {
+  margin: 0px;
+  padding: 10px 5px;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.room-header-subtitle {
+  margin: 0px;
+  padding: 10px 5px;
+  font-size: 1rem;
+}
+
+.exit-button {
+  padding: 10px 20px;
+}
+
+.exit-button:active {
+  transform: scale(0.95);
+  transition: transform 200ms ease;
 }
 
 .main {
@@ -109,12 +122,12 @@ figure {
 .host-figure {
   width: 30px;
   height: 30px;
+  overflow: hidden;
 }
 
 .host-figure-image {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
 }
 
 .player-move {
@@ -139,12 +152,16 @@ figure {
   border-radius: 10px;
 }
 
-.player-image {
+.player-figure {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #ffffff;
+}
+
+.player-image {
+  width: 100%;
+  height: 100%;
 }
 
 .player-box {
@@ -176,9 +193,7 @@ figure {
 }
 
 .player-exp-box {
-  display: flex;
-  justify-content: center;
-  gap: 2px;
+  text-align: center;
 }
 
 .spectators {
@@ -196,6 +211,7 @@ figure {
   padding-left: 10px;
   margin: 0;
 }
+
 .spectators-list {
   display: flex;
   flex-direction: column;
@@ -220,12 +236,16 @@ figure {
   gap: 10px;
 }
 
-.spectator-image {
+.spectator-figure {
   width: 30px;
   height: 30px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #ffffff;
+}
+
+.spectator-image {
+  width: 100%;
+  height: 100%;
 }
 
 .spectator-box {

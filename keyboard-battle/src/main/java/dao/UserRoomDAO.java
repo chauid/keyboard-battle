@@ -75,7 +75,7 @@ public class UserRoomDAO {
 		}
 	}
 
-	public List<UserRoomDTO> readUserRoomByRoomId(String roomId) {
+	public List<UserRoomDTO> readUserRoomsByRoomId(String roomId) {
 		List<UserRoomDTO> list = new ArrayList<UserRoomDTO>();
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
@@ -90,6 +90,7 @@ public class UserRoomDAO {
 				UserRoomDTO userRoom = new UserRoomDTO();
 				userRoom.setUserId(rs.getInt("user_id"));
 				userRoom.setRoomId(rs.getString("room_id"));
+				userRoom.setSocketSessionId(rs.getString("socket_session_id"));
 				userRoom.setIngame(rs.getBoolean("is_ingame"));
 				userRoom.setReady(rs.getBoolean("is_ready"));
 				list.add(userRoom);
