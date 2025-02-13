@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Animation</title>
+    <style>
+        #boxContainer {
+            width: 300px;
+            height: 400px;
+            border: 2px solid black;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; /* 아래에서부터 쌓이도록 설정 */
+            position: relative;
+        }
+
+        .box {
+            width: 90%;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: lightblue;
+            border: 1px solid blue;
+            text-align: center;
+            transform: translateY(-100%);
+            opacity: 0;
+            animation: dropDown 0.5s ease-out forwards;
+        }
+
+        @keyframes dropDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button onclick="addBox()">Add Box</button>
+    <button onclick="removeBox()">Remove Box</button>
+    <div id="boxContainer"></div>
+
+    <script>
+        function addBox() {
+            const container = document.getElementById("boxContainer");
+            const newBox = document.createElement("div");
+            newBox.classList.add("box");
+            newBox.textContent = "텍스트 문자열";
+
+            // 컨테이너의 맨 앞(위쪽)에 추가
+            container.prepend(newBox);
+        }
+
+        function removeBox() {
+            const container = document.getElementById("boxContainer");
+            const boxes = container.getElementsByClassName("box");
+
+            if (boxes.length > 0) {
+                const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
+                lastBox.style.animation = "fadeOut 0.5s ease-out forwards";
+
+                // 애니메이션이 끝난 후 요소 제거
+                setTimeout(() => {
+                    lastBox.remove();
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

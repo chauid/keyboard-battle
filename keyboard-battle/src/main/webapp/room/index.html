@@ -15,153 +15,203 @@
   <script>
     let ws = null;
     let roomId = new URLSearchParams(window.location.search).get("id");
-    let userId = "";
+    let myNickname = "";
+    let myUserId = "";
+    let currentReadyState = false;
 
     function receiveClientMessage(message) {
-      const clientCount = message.split(":")[1];
-      const maxClientCount = message.split(":")[2];
-      const subtitleElement = document.getElementById("room-header-subtitle");
-      subtitleElement.innerText = `[${clientCount}/${maxClientCount}]`;
+      const clientCount = message.split("::")[1];
+      const maxClientCount = message.split("::")[2];
+      $("#room-header-subtitle").text(`[${clientCount}/${maxClientCount}]`);
     }
 
     function receiveTitleMessage(message) {
-      const title = message.split(":")[1];
-      const titleElement = document.getElementById("room-header-title");
-      titleElement.innerText = title;
+      const title = message.split("::")[1];
+      $("#room-header-title").text(title);
     }
 
     function receiveChatMessage(message) {
-      const user = message.split(":")[1];
-      const chatInput = message.split(":")[2];
-      const chatBody = document.getElementById("chat-box-body");
-      chatBody.innerHTML += `
+      const user = message.split("::")[1];
+      const chatInput = message.split("::")[2];
+      const chatBody = $("#chat-box-body");
+      chatBody.append(`
         <div class="message-box">
           <span class="chat-user">${user}</span>
           <span class="chat-message">${chatInput}</span>
         </div>
-      `;
-      const messageBox = document.querySelector('.message-box');
-      chatBody.scrollTop = chatBody.scrollHeight;
+      `);
+      chatBody.scrollTop(chatBody[0].scrollHeight);
     }
 
     function recieveMoveMessage(message) {
-      const spaceIndex = message.split(":")[1];
-      const userId = message.split(":")[2];
+      const spaceIndex = message.split("::")[1];
+      const userNickname = message.split("::")[2];
+      const userLevel = message.split("::")[3];
+      const userExp = message.split("::")[4];
+      const userImage = message.split("::")[5];
+      const userTitle = message.split("::")[6];
+      const userHost = message.split("::")[7];
 
-      if(userId === '0') {
-        return;
+      const imageElement = $(`#space${spaceIndex}-image`)[0];
+      const levelElement = $(`#space${spaceIndex}-level`)[0];
+      const nicknameElement = $(`#space${spaceIndex}-nickname`)[0];
+      const titleElement = $(`#space${spaceIndex}-title`)[0];
+      const hostElement = $(`#space${spaceIndex}-host`)[0];
+      const expElement0 = $('#space0-exp')[0];
+      const expElement1 = $('#space1-exp')[0];
+
+      $(imageElement).attr("src", userImage);
+      $(levelElement).text(userLevel);
+      $(nicknameElement).text(userNickname);
+      $(titleElement).text(userTitle !== 'null' ? userTitle : "칭호 없음");
+      if (userHost == 'true') {
+        $(hostElement).html(`
+          <figure class="host-figure">
+            <img class="host-figure-image" src="/keyboard-battle/images/crown.png" alt="" />
+          </figure>
+        `);
+      } else {
+        $(hostElement).text("");
       }
 
-      $.ajax({
-        url: './get-user-info.jsp',
-        type: 'GET',
-        data: {
-          user: userId,
-          room: roomId,
-        },
-        success: function (response) {
-          const userImage = response.thumbnail;
-          const userLevel = response.level;
-          const userNickname = response.nickname;
-          const userTitle = response.title;
-          const userHost = response.host;
-          const userExp = response.exp;
+      if (spaceIndex === '0') { // player0
+        $(expElement0).html(`<span>exp ${userExp} / ${userLevel * 10}</span>`);
+      }
+      if (spaceIndex === '1') { // player1
+        $(expElement1).html(`<span>exp ${userExp} / ${userLevel * 10}</span>`);
+      }
 
-          const imageElement = document.getElementById(`space${spaceIndex}-image`);
-          const levelElement = document.getElementById(`space${spaceIndex}-level`);
-          const nicknameElement = document.getElementById(`space${spaceIndex}-nickname`);
-          const titleElement = document.getElementById(`space${spaceIndex}-title`);
-          const hostElement = document.getElementById(`space${spaceIndex}-host`);
-          const expElement0 = document.getElementById('space0-exp');
-          const expElement1 = document.getElementById('space1-exp');
-
-          imageElement.src = userImage;
-          levelElement.innerText = userLevel;
-          nicknameElement.innerText = userNickname;
-          titleElement.innerText = userTitle;
-          if (userHost) {
-            hostElement.innerHTML = `
-              <figure class="host-figure">
-                <img class="host-figure-image" src="/keyboard-battle/images/crown.png" alt="" />
-              </figure>
-            `;
-          } else {
-            hostElement.innerText = "";
-          }
-
-          if (spaceIndex === '0') { // player0
-            expElement0.innerHTML = `<span>exp ${userExp} / ${userLevel * 10}</span>`;
-          }
-          if (spaceIndex === '1') { // player1
-            expElement1.innerHTML = `<span>exp ${userExp} / ${userLevel * 10}</span>`;
-          }
-
-          document.querySelectorAll('.player-move').forEach(button => {
-            button.disabled = false;
-          });
-          document.querySelectorAll('.spectator-move').forEach(button => {
-            button.disabled = false;
-          });
-        },
-      });
+      $('.player-move').prop('disabled', false);
+      $('.spectator-move').prop('disabled', false);
     }
 
     function receiveRemoveMessage(message) {
-      const spaceIndex = message.split(":")[1];
-      const imageElement = document.getElementById(`space${spaceIndex}-image`);
-      const levelElement = document.getElementById(`space${spaceIndex}-level`);
-      const nicknameElement = document.getElementById(`space${spaceIndex}-nickname`);
-      const titleElement = document.getElementById(`space${spaceIndex}-title`);
-      const hostElement = document.getElementById(`space${spaceIndex}-host`);
-      const expElement0 = document.getElementById('space0-exp');
-      const expElement1 = document.getElementById('space1-exp');
+      const spaceIndex = message.split("::")[1];
+      const imageElement = $(`#space${spaceIndex}-image`);
+      const levelElement = $(`#space${spaceIndex}-level`);
+      const nicknameElement = $(`#space${spaceIndex}-nickname`);
+      const titleElement = $(`#space${spaceIndex}-title`);
+      const hostElement = $(`#space${spaceIndex}-host`);
+      const expElement0 = $('#space0-exp');
+      const expElement1 = $('#space1-exp');
+      const spaceElement = $(`#space${spaceIndex}`);
 
-      imageElement.src = "/keyboard-battle/images/white-image.png";
-      levelElement.innerText = "";
-      nicknameElement.innerText = "";
-      titleElement.innerText = "";
-      hostElement.innerText = "";
+      spaceElement.css({
+        'background-color': '#d1e4ee',
+        'box-shadow': ''
+      });
+      imageElement.attr("src", "/keyboard-battle/images/white-image.png");
+      levelElement.text("");
+      nicknameElement.text("");
+      titleElement.text("");
+      hostElement.text("");
 
       if (spaceIndex === '0') { // player0
-        expElement0.innerHTML = '';
+        expElement0.html('');
       }
       if (spaceIndex === '1') { // player1
-        expElement1.innerHTML = '';
+        expElement1.html('');
       }
     }
 
     function receiveHostMessage(message) {
-      const spaceIndex = message.split(":")[1];
-      const hostElement = document.getElementById(`space${spaceIndex}-host`);
-      if (userId === '0') {
-        hostElement.innerHTML = `
-          <figure class="host-figure">
-            <img class="host-figure-image" src="/keyboard-battle/images/crown.png" alt="" />
-          </figure>
-        `;
+      const spaceIndex = message.split("::")[1];
+      const hostId = message.split("::")[2];
+      if (hostId === myUserId) {
+
+        const spaceElement = $(`#space${spaceIndex}`);
+        spaceElement.css({
+          'background-color': '#d1e4ee',
+          'box-shadow': ''
+        });
+
+        const readyButton = $('#ready-button');
+        readyButton.hide();
+        const startButton = $('#start-button');
+        startButton.show();
+
+        if (currentReadyState) {
+          ws.send("ready::" + myUserId);
+          currentReadyState = false;
+        }
+      }
+      for (let i = 0; i < 10; i++) {
+        const hostElement = $(`#space${i}-host`);
+        if (i == spaceIndex) {
+          hostElement.html(`
+            <figure class="host-figure">
+              <img class="host-figure-image" src="/keyboard-battle/images/crown.png" alt="" />
+            </figure>
+          `);
+        } else {
+          hostElement.text("");
+        }
+      }
+    }
+
+    function receiveReadyMessage(message) {
+      const spaceIndex = message.split("::")[1];
+      const readyState = message.split("::")[2];
+      const spaceElement = $(`#space${spaceIndex}`);
+      const readyButton = $('#ready-button');
+
+      if (readyState === 'on') {
+        spaceElement.css({
+          'background-color': '#acf1ae',
+          'box-shadow': '0 0 10px rgba(0, 0, 0, 0.4)'
+        });
       } else {
-        hostElement.innerText = "";
+        spaceElement.css({
+          'background-color': '#d1e4ee',
+          'box-shadow': ''
+        });
+      }
+    }
+
+    function receiveStartMessage(message) {
+      const status = message.split("::")[1];
+      const reason = message.split("::")[2];
+
+      if (status === 'true') {
+        window.location.href = "/keyboard-battle/room/in-game?id=" + roomId;
+      } else {
+        if (reason === 'auth') {
+          alert('방장도 아닌 놈이 무슨 게임 시작?');
+          $('#start-button').html('게임 시작');
+        } else if (reason === 'ready') {
+          alert('준비가 완료되지 않은 플레이어가 있습니다.');
+          $('#start-button').html('게임 시작');
+        } else if (reason === 'two') {
+          alert('플레이어가 2명이어야 게임을 시작할 수 있습니다.');
+          $('#start-button').html('게임 시작');
+        } else {
+          alert('알 수 없는 이유로 게임 시작에 실패했습니다.');
+          $('#start-button').html('게임 시작');
+        }
       }
     }
 
     $(document).ready(function () {
-      window.onbeforeunload = function () {
-        ws.close();
-      };
+      if (roomId === undefined || roomId === null || roomId === "") {
+        window.location.href = "/keyboard-battle/free-channel";
+      }
 
       ws = new WebSocket("/keyboard-battle/room-chat/" + roomId);
       ws.onopen = function () {
+        myNickname = document.cookie.split('; ').find(row => row.startsWith('nickname=')).split('=')[1];
         const value = `; ${document.cookie}`;
         const parts = value.split("; userid=");
         if (parts.length === 2) {
-          userId = parts.pop().split(";").shift();
+          myUserId = parts.pop().split(";").shift();
         }
-        ws.send("new:" + userId);
+        ws.send("new::" + myUserId);
+
+        $('#ready-button').text('준비');
       };
 
       ws.onmessage = function (event) {
-        console.log(event.data);
-        const msgType = event.data.split(":")[0];
+        // console.log(event.data);
+        const msgType = event.data.split("::")[0];
         switch (msgType) {
           case "client":
             receiveClientMessage(event.data);
@@ -179,10 +229,13 @@
             receiveRemoveMessage(event.data);
             break;
           case "host":
+            receiveHostMessage(event.data);
             break;
           case "ready":
+            receiveReadyMessage(event.data);
             break;
           case "start":
+            receiveStartMessage(event.data);
             break;
           default:
             console.log("unknown message type");
@@ -199,13 +252,10 @@
 
       function sendChatMessage() {
         const chatInput = $("#chat-input").val();
-        const nickname = document.cookie.split('; ').find(row => row.startsWith('nickname=')).split('=')[1];
-        const chatMessage = `chat:${nickname}:${chatInput}`;
-        // console.log(chatMessage);
-        const chatBody = document.getElementById("chat-box-body");
-        chatBody.innerHTML += `<div class="message-box"><span class="chat-user">${nickname}</span><span class="chat-message">${chatInput}</span></div>`;
-        const messageBox = document.querySelector(".message-box");
-        chatBody.scrollTop = chatBody.scrollHeight;
+        const chatMessage = `chat::${myNickname}::${chatInput}`;
+        const chatBody = $("#chat-box-body");
+        chatBody.append(`<div class="message-box"><span class="chat-user">${myNickname}</span><span class="chat-message">${chatInput}</span></div>`);
+        chatBody.scrollTop(chatBody[0].scrollHeight);
         $("#chat-input").val("");
         ws.send(chatMessage);
       }
@@ -217,8 +267,21 @@
       });
 
       $("#ready-button").click(function () {
-        $("#ready-button").text("준비 완료");
-        ws.send("ready:" + userId);
+        currentReadyState = !currentReadyState;
+        const readyButton = $('#ready-button');
+        if (currentReadyState) {
+          readyButton.text('준비 완료');
+          readyButton.css({ 'background-color': '#36d96e' });
+        } else {
+          readyButton.text('준비');
+          readyButton.css({ 'background-color': '#47e7e5' });
+        }
+        ws.send("ready::" + myUserId);
+      });
+
+      $("#start-button").click(function () {
+        $('#start-button').html('<div class="spinner-border text-secondary" role="status"></div>');
+        ws.send("start::" + myUserId);
       });
 
       $("#exit-button").on("click", function () {
@@ -228,13 +291,13 @@
     });
 
     function handleMoveButton(spaceIndex) {
-      document.querySelectorAll('.player-move').forEach(button => {
-        button.disabled = true;
-      });
-      document.querySelectorAll('.spectator-move').forEach(button => {
-        button.disabled = true;
-      });
-      ws.send("move:" + userId + ":" + spaceIndex);
+      if (currentReadyState) {
+        alert('준비 완료 상태에서 자리를 이동할 수 없습니다.');
+        return;
+      }
+      $('.player-move').prop('disabled', true);
+      $('.spectator-move').prop('disabled', true);
+      ws.send("move::" + myUserId + "::" + spaceIndex);
     }
   </script>
 </head>
@@ -263,7 +326,7 @@
               이동
             </button>
           </div>
-          <div class="player-info">
+          <div id="space0" class="player-info">
             <figure class="player-figure">
               <img id="space0-image" class="player-image" src="/keyboard-battle/images/white-image.png" alt="" />
             </figure>
@@ -289,7 +352,7 @@
               이동
             </button>
           </div>
-          <div class="player-info">
+          <div id="space1" class="player-info">
             <figure class="player-figure">
               <img id="space1-image" class="player-image" src="/keyboard-battle/images/white-image.png" alt="" />
             </figure>
@@ -308,7 +371,7 @@
       <div class="spectators">
         <p class="spectators-header">관전자 목록</p>
         <div class="spectators-list">
-          <div class="spectator">
+          <div id="space2" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space2-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -325,7 +388,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space3" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space3-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -342,7 +405,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space4" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space4-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -359,7 +422,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space5" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space5-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -376,7 +439,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space6" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space6-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -393,7 +456,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space7" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space7-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -410,7 +473,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space8" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space8-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -427,7 +490,7 @@
               이동
             </button>
           </div>
-          <div class="spectator">
+          <div id="space9" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
                 <img id="space9-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
@@ -449,8 +512,8 @@
       </div>
     </main>
     <div class="sub">
-      <button id="ready-button" class="ready-button">준비</button>
-      <!-- <button id="start-button" class="ready-button">게임 시작</button> -->
+      <button id="ready-button" class="ready-button">준비 하기</button>
+      <button id="start-button" class="ready-button" style="display: none;">게임 시작</button>
       <div class="chat-box">
         <div id="chat-box-body" class="chat-box-body"></div>
         <input id="chat-input" class="form-control chat-input" type="text" placeholder="메시지 입력" />

@@ -27,7 +27,7 @@ public class RoomMiddleware implements Filter {
 			chain.doFilter(request, response);
 			return;
 		}
-//		System.out.println("room id: " + roomId);
+//		System.out.println("room middleware 실행");
 
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO roomDto = roomDao.readRoomById(roomId);

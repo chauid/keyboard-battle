@@ -31,7 +31,9 @@ public class Middleware implements Filter {
 			chain.doFilter(request, response);
 			return;
 		}
+//		System.out.println("middleware 실행");
 
+		
 		// 세션이 일치하지 않음
 		int userId = 0;
 		Cookie[] cookies = req.getCookies();

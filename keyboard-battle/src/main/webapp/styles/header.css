@@ -1,0 +1,45 @@
+@charset "UTF-8";
+
+body * {
+  font-family: "Pretendard Variable", sans-serif;
+}
+
+header.root-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 60px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 10px 20px;
+}
+
+header.root-header nav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+header.root-header nav ul li {
+  margin-left: 20px;
+}
+
+header.root-header nav ul li a {
+  text-decoration: none;
+  color: #000;
+  font-weight: bold;
+}
+
+header.root-header h1 {
+  margin: 0;
+}
+
+header.root-header h1 a {
+  text-decoration: none;
+  color: #000;
+}

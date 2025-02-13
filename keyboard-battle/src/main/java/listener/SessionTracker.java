@@ -10,21 +10,21 @@ import jakarta.servlet.http.HttpSessionListener;
 
 @WebListener
 public class SessionTracker implements HttpSessionListener {
-    private static final Set<HttpSession> activeSessions = Collections.synchronizedSet(new HashSet<HttpSession>());
+	private static final Set<HttpSession> activeSessions = Collections.synchronizedSet(new HashSet<HttpSession>());
 
-    @Override
-    public void sessionCreated(HttpSessionEvent event) {
-        HttpSession session = event.getSession();
-        activeSessions.add(session);
-    }
+	@Override
+	public void sessionCreated(HttpSessionEvent event) {
+		HttpSession session = event.getSession();
+		activeSessions.add(session);
+	}
 
-    @Override
-    public void sessionDestroyed(HttpSessionEvent event) {
-        HttpSession session = event.getSession();
-        activeSessions.remove(session);
-    }
+	@Override
+	public void sessionDestroyed(HttpSessionEvent event) {
+		HttpSession session = event.getSession();
+		activeSessions.remove(session);
+	}
 
-    public static Set<HttpSession> getActiveSessions() {
-        return activeSessions;
-    }
+	public static Set<HttpSession> getActiveSessions() {
+		return activeSessions;
+	}
 }

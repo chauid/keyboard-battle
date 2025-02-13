@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숫자 증가 애니메이션</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #counter {
+            font-size: 48px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="counter">100</div>
+    <button id="increase-btn">숫자 증가</button>
+
+    <script>
+        $(document).ready(function() {
+            $("#increase-btn").click(function() {
+                let $counter = $("#counter");
+                let currentNumber = parseInt($counter.text(), 10);
+                let targetNumber = currentNumber + 2501; // 증가 후 목표 값
+                let duration = 1000; // 애니메이션 지속 시간 (1초)
+                let frameRate = 30; // 초당 프레임 수
+                let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate)); // 한 프레임당 증가량
+
+                let interval = setInterval(function() {
+                    currentNumber += step;
+                    if (currentNumber >= targetNumber) {
+                        currentNumber = targetNumber; // 정확한 최종 값 설정
+                        clearInterval(interval);
+                    }
+                    $counter.text(Math.floor(currentNumber));
+                }, 1000 / frameRate);
+            });
+        });
+    </script>
+
+</body>
+</html>

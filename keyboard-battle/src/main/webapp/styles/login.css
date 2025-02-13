@@ -11,7 +11,7 @@ body {
   align-items: center;
   height: 100vh;
   margin: 0;
-  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
 }
 
 .login-form {
@@ -21,6 +21,7 @@ body {
   border: 1px solid #ccc;
   padding: 20px;
   border-radius: 5px;
+  background-color: #ffffff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 

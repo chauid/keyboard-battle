@@ -83,10 +83,12 @@
           let elapsedTime = (new Date() - startTime) / 1000; // in seconds
           let speed = (keyStroke / elapsedTime) * 60; // characters per minute
 
+          let showSpeed = Math.round(speed) ? Math.round(speed) : 0;
+          let showAccuracy = accuracy ? accuracy.toFixed(1) : 0;
           $("#speedDisplay").text(
-            "타자 속도: " + Math.round(speed) + " characters per minute"
+            "타자 속도: " + showSpeed + " characters per minute"
           );
-          $("#accuracyDisplay").text("정확도: " + accuracy.toFixed(2) + "%");
+          $("#accuracyDisplay").text("정확도: " + showAccuracy + "%");
         });
 
         setInterval(function () {
@@ -106,10 +108,12 @@
           let elapsedTime = (new Date() - startTime) / 1000; // in seconds
           let speed = (keyStroke / elapsedTime) * 60; // characters per minute
 
+          let showSpeed = Math.round(speed) ? Math.round(speed) : 0;
+          let showAccuracy = accuracy ? accuracy.toFixed(1) : 0;
           $("#speedDisplay").text(
-            "타자 속도: " + Math.round(speed) + " characters per minute"
+            "타자 속도: " + showSpeed + " characters per minute"
           );
-          $("#accuracyDisplay").text("정확도: " + accuracy.toFixed(2) + "%");
+          $("#accuracyDisplay").text("정확도: " + showAccuracy + "%");
         }, 1000);
       });
     </script>

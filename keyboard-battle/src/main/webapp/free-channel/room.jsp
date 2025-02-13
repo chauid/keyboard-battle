@@ -36,13 +36,16 @@ if (room.getPassword() == null || room.getPassword().equals("")) {
 } else {
 	if (room.getPassword().equals(inputPassword)) {
 		if (currentUsersInRoom > maxUsersInRoom) {
+			responseJson.put("password", "true");
 			responseJson.put("result", "failed");
 			responseJson.put("room", "full");
 		} else {
 			session.setAttribute("roompw", room.getPassword());
+			responseJson.put("password", "true");
 			responseJson.put("result", "success");
 		}
-	} else {
+	} else {		
+		responseJson.put("password", "false");
 		responseJson.put("result", "failed");
 	}
 }
