@@ -182,14 +182,15 @@ public class UserRoomDAO {
 	public void updateUserRoom(UserRoomDTO userRoom) {
 		Connection conn = db.getConnection();
 		PreparedStatement pstmt = null;
-		String query = "UPDATE user_room SET socket_session_id = ?, is_ingame = ?, is_ready = ? WHERE user_id = ?";
+		String query = "UPDATE user_room SET socket_session_id = ?, is_ingame = ?, is_ready = ?, space_index = ? WHERE user_id = ?";
 
 		try {
 			pstmt = conn.prepareStatement(query);
 			pstmt.setString(1, userRoom.getSocketSessionId());
 			pstmt.setBoolean(2, userRoom.isIngame());
 			pstmt.setBoolean(3, userRoom.isReady());
-			pstmt.setInt(4, userRoom.getUserId());
+			pstmt.setInt(4, userRoom.getSpaceIndex());
+			pstmt.setInt(5, userRoom.getUserId());
 			pstmt.executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();

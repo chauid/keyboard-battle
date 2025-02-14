@@ -6,6 +6,7 @@ public class UserRoomDTO {
 	private String socketSessionId;
 	private boolean isIngame;
 	private boolean isReady;
+	private int spaceIndex;
 
 	public int getUserId() {
 		return userId;
@@ -46,4 +47,13 @@ public class UserRoomDTO {
 	public void setReady(boolean isReady) {
 		this.isReady = isReady;
 	}
+
+	public int getSpaceIndex() {
+		return spaceIndex;
+	}
+
+	public void setSpaceIndex(int spaceIndex) {
+		this.spaceIndex = spaceIndex;
+	}
+
 }

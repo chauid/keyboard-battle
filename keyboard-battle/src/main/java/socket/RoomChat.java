@@ -138,14 +138,28 @@ public class RoomChat {
 	public void onClose() {
 		Set<Session> roomSessions = rooms.get(this.roomId);
 		int[] roomSpace = spaces.get(this.roomId);
-
 		if (roomSessions == null) {
 			return;
 		}
-		roomSessions.remove(this.session);
-
+		
 		RoomDAO roomDao = new RoomDAO();
 		UserRoomDAO userRoomDao = new UserRoomDAO();
+		
+		boolean isIngame = false;
+		List<UserRoomDTO> userRooms = userRoomDao.readUserRoomsByRoomId(this.roomId);
+		for (UserRoomDTO ur : userRooms) {
+			if (ur.isIngame()) {
+				isIngame = true;
+				break;
+			}
+		}
+		
+		if (isIngame) { // 유저가 게임중이라면 방은 유지
+			return;
+		}
+
+		roomSessions.remove(this.session);
+
 
 		if (roomSessions.isEmpty()) { // 유저가 모두 나간 경우
 			roomDao.deleteRoom(this.roomId); // cascade delete user_room
@@ -241,7 +255,6 @@ public class RoomChat {
 		}
 
 		userRoom.setSocketSessionId(session.getId());
-		userRoomDao.updateUserRoom(userRoom);
 
 		int[] roomSpace = spaces.get(this.roomId);
 		int spaceIndex = 0;
@@ -252,6 +265,8 @@ public class RoomChat {
 				break;
 			}
 		}
+		userRoom.setSpaceIndex(spaceIndex);
+		userRoomDao.updateUserRoom(userRoom);
 
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO room = roomDao.readRoomById(this.roomId);
@@ -356,10 +371,12 @@ public class RoomChat {
 		String moveMessage = "move::";
 		if (userRoom.isReady() || roomSpace[spaceIndex] != 0) { // 준비 완료 상태에 또는 이미 차있는 자리인 경우 제자리 반환
 			moveMessage += oldSpaceIndex + "::";
+			userRoom.setSpaceIndex(oldSpaceIndex);
 		} else {
 			moveMessage += spaceIndex + "::";
 			roomSpace[oldSpaceIndex] = 0;
 			roomSpace[spaceIndex] = userId;
+			userRoom.setSpaceIndex(spaceIndex);
 		}
 		moveMessage += user.getNickname() + "::";
 		moveMessage += user.getLevel() + "::";
@@ -367,6 +384,8 @@ public class RoomChat {
 		moveMessage += user.getThumbnailImage() + "::";
 		moveMessage += titleName + "::";
 		moveMessage += isHost;
+		
+		userRoomDao.updateUserRoom(userRoom);
 
 		try {
 			sendToAllClientsInRoom("remove::" + oldSpaceIndex);
