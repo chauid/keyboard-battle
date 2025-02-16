@@ -18,7 +18,7 @@ import jakarta.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/free-chat")
 public class FreeChat {
-	private static Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
+	private static final Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
 
 	@OnOpen
 	public void onOpen(Session session) {

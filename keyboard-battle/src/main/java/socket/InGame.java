@@ -3,7 +3,10 @@ package socket;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 
 import dao.ChatLogDAO;
 import dao.UserDAO;
@@ -18,12 +21,25 @@ import jakarta.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/in-game/{roomId}")
 public class InGame {
-	private static Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
-
+	private static final Map<String, Set<Session>> rooms = Collections.synchronizedMap(new ConcurrentHashMap<>());
+	private static final Map<String, Boolean> isPlaying = Collections.synchronizedMap(new ConcurrentHashMap<>());
+	private static final Map<String, int[]> spaces = Collections.synchronizedMap(new ConcurrentHashMap<>());
+	private static final Map<String, ScheduledExecutorService> schedules = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	@OnOpen
 	public void onOpen(Session session) {
 		System.out.println(session.getId() + " 접속");
-		clients.add(session); // 세션 추가
+		
+//		ScheduledExecutorService scheduler = schedules.get(roomId);
+//		scheduler = Executors.newScheduledThreadPool(1);
+//        scheduler.scheduleAtFixedRate(() -> {
+//            try {
+//                if (session.isOpen()) {
+//                    session.getBasicRemote().sendText("서버 메시지: " + System.currentTimeMillis());
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }, 0, 1, TimeUnit.SECONDS);
 	}
 
 	@OnMessage

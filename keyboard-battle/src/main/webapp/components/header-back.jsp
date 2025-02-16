@@ -54,21 +54,21 @@ header.root-header h1 a {
 <body>
 	<header class="root-header">
 		<h1>
-			<a href="/keyboard-battle">Keyboard Battle</a>
+			<a href="/">Keyboard Battle</a>
 		</h1>
 		<nav>
 			<ul>
-				<li><a href="/keyboard-battle/free-channel">게임시작</a></li>
+				<li><a href="/free-channel">게임시작</a></li>
 				<%
 				Object sessionUser = session.getAttribute("user");
 				if (sessionUser != null) {
 				%>
-				<li><a href="/keyboard-battle/login/logout.jsp">로그아웃</a></li>
+				<li><a href="/login/logout.jsp">로그아웃</a></li>
 				<%
 				} else {
 				%>
-				<li><a href="/keyboard-battle/login">로그인</a></li>
-				<li><a href="/keyboard-battle/signup">회원가입</a></li>
+				<li><a href="/login">로그인</a></li>
+				<li><a href="/signup">회원가입</a></li>
 				<%
 				}
 				%>

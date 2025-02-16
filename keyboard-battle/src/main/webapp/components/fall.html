@@ -74,12 +74,12 @@
 
             if (boxes.length > 0) {
                 const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
-                lastBox.style.animation = "fadeOut 0.5s ease-out forwards";
+                lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
 
                 // 애니메이션이 끝난 후 요소 제거
                 setTimeout(() => {
                     lastBox.remove();
-                }, 500);
+                }, 200);
             }
         }
     </script>

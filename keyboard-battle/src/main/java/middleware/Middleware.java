@@ -38,7 +38,7 @@ public class Middleware implements Filter {
 		int userId = 0;
 		Cookie[] cookies = req.getCookies();
 		if (cookies == null) { // 쿠키가 없음
-			res.sendRedirect("/keyboard-battle/login");
+			res.sendRedirect("/login");
 			return;
 		}
 		for (Cookie cookie : cookies) {
@@ -48,7 +48,7 @@ public class Middleware implements Filter {
 		}
 		if (userId == 0) { // userid 쿠키가 없음
 //			System.out.println("currentCookie is null");
-			res.sendRedirect("/keyboard-battle/login");
+			res.sendRedirect("/login");
 			return;
 		}
 
@@ -56,7 +56,7 @@ public class Middleware implements Filter {
 		UserSessionDTO sessionDTO = userSessionDAO.readUserSessionByUserId(userId);
 		if (sessionDTO == null) { // 세션 정보가 없음
 //			System.out.println("sessionDTO is null");
-			res.sendRedirect("/keyboard-battle/login");
+			res.sendRedirect("/login");
 			return;
 		}
 
@@ -74,7 +74,7 @@ public class Middleware implements Filter {
 						loginCookie.setMaxAge(0); // 현재 세션 쿠키 삭제
 						res.addCookie(loginCookie);
 						Cookie cookie = new Cookie("JSESSIONID", curSessionId); // 기존 세션 사용
-						cookie.setPath("/keyboard-battle");
+						cookie.setPath("/");
 						cookie.setHttpOnly(true);
 						res.addCookie(cookie);
 						break;
@@ -95,7 +95,7 @@ public class Middleware implements Filter {
 			return;
 		} else {
 //			System.out.println("session is not exist");
-			res.sendRedirect("/keyboard-battle/login");
+			res.sendRedirect("/login");
 			return;
 		}
 	}

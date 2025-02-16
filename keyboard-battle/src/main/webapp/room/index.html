@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="/keyboard-battle/styles/room.css" />
+  <link rel="stylesheet" href="/styles/room.css" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
   <script>
@@ -18,16 +18,24 @@
     let myNickname = "";
     let myUserId = "";
     let currentReadyState = false;
+    let refreshInterval = null;
 
     function receiveClientMessage(message) {
       const clientCount = message.split("::")[1];
       const maxClientCount = message.split("::")[2];
       $("#room-header-subtitle").text(`[${clientCount}/${maxClientCount}]`);
+      $('#loading-text').text('방 정보 불러오는 중...');
+      $('#progress-bar-value').css('width', '50%');
+      $('#progress-percentage').text('50%');
+      
     }
 
     function receiveTitleMessage(message) {
       const title = message.split("::")[1];
       $("#room-header-title").text(title);
+      $('#loading-text').text('유저 정보 불러오는 중...');
+      $('#progress-bar-value').css('width', '75%');
+      $('#progress-percentage').text('75%');
     }
 
     function receiveChatMessage(message) {
@@ -51,6 +59,7 @@
       const userImage = message.split("::")[5];
       const userTitle = message.split("::")[6];
       const userHost = message.split("::")[7];
+      const userReady = message.split("::")[8];
 
       const imageElement = $(`#space${spaceIndex}-image`)[0];
       const levelElement = $(`#space${spaceIndex}-level`)[0];
@@ -67,11 +76,23 @@
       if (userHost == 'true') {
         $(hostElement).html(`
           <figure class="host-figure">
-            <img class="host-figure-image" src="/keyboard-battle/images/crown.png" alt="" />
+            <img class="host-figure-image" src="/images/crown.png" alt="" />
           </figure>
         `);
       } else {
         $(hostElement).text("");
+      }
+
+      if (userReady == 'on') { 
+        $(`#space${spaceIndex}`).css({
+          'background-color': '#acf1ae',
+          'box-shadow': '0 0 10px rgba(0, 0, 0, 0.4)'
+        });
+      } else {
+        $(`#space${spaceIndex}`).css({
+          'background-color': '#d1e4ee',
+          'box-shadow': ''
+        });
       }
 
       if (spaceIndex === '0') { // player0
@@ -100,7 +121,7 @@
         'background-color': '#d1e4ee',
         'box-shadow': ''
       });
-      imageElement.attr("src", "/keyboard-battle/images/white-image.png");
+      imageElement.attr("src", "/images/white-image.png");
       levelElement.text("");
       nicknameElement.text("");
       titleElement.text("");
@@ -140,13 +161,21 @@
         if (i == spaceIndex) {
           hostElement.html(`
             <figure class="host-figure">
-              <img class="host-figure-image" src="/keyboard-battle/images/crown.png" alt="" />
+              <img class="host-figure-image" src="/images/crown.png" alt="" />
             </figure>
           `);
         } else {
           hostElement.text("");
         }
       }
+      $('#loading-text').text('로딩 완료!');
+      $('#progress-bar-value').css('width', '100%');
+      $('#progress-percentage').text('100%');
+      clearTimeout(refreshInterval);
+      setTimeout(() => {
+        $('.container').css('filter', '');
+        $('.loading-container').hide();
+      }, 500);
     }
 
     function receiveReadyMessage(message) {
@@ -173,7 +202,7 @@
       const reason = message.split("::")[2];
 
       if (status === 'true') {
-        window.location.href = "/keyboard-battle/room/in-game?id=" + roomId;
+        window.location.href = "/room/in-game?id=" + roomId;
       } else {
         if (reason === 'auth') {
           alert('방장도 아닌 놈이 무슨 게임 시작?');
@@ -193,10 +222,10 @@
 
     $(document).ready(function () {
       if (roomId === undefined || roomId === null || roomId === "") {
-        window.location.href = "/keyboard-battle/free-channel";
+        window.location.href = "/free-channel";
       }
 
-      ws = new WebSocket("/keyboard-battle/room-chat/" + roomId);
+      ws = new WebSocket("/room-chat/" + roomId);
       ws.onopen = function () {
         myNickname = document.cookie.split('; ').find(row => row.startsWith('nickname=')).split('=')[1];
         const value = `; ${document.cookie}`;
@@ -205,8 +234,17 @@
           myUserId = parts.pop().split(";").shift();
         }
         ws.send("new::" + myUserId);
+        $('.container').css('filter', 'blur(5px)');
+        $('#loading-text').text('유저 목록 불러오는 중...');
+        $('#progress-bar-value').css('width', '25%');
+        $('#progress-percentage').text('25%');
 
-        $('#ready-button').text('준비');
+        setTimeout(() => {
+          $('#loading-text').text('로딩이 너무 오래 걸리면, 새로고침을 시도해주세요. 10초 후 새로고침됩니다.');
+        }, 10000);
+        refreshInterval = setTimeout(() => {
+          location.reload();
+        }, 20000);
       };
 
       ws.onmessage = function (event) {
@@ -273,7 +311,7 @@
           readyButton.text('준비 완료');
           readyButton.css({ 'background-color': '#36d96e' });
         } else {
-          readyButton.text('준비');
+          readyButton.text('준비 하기');
           readyButton.css({ 'background-color': '#47e7e5' });
         }
         ws.send("ready::" + myUserId);
@@ -285,7 +323,7 @@
       });
 
       $("#exit-button").on("click", function () {
-        window.location.href = "/keyboard-battle/free-channel";
+        window.location.href = "/free-channel";
       });
 
     });
@@ -328,7 +366,7 @@
           </div>
           <div id="space0" class="player-info">
             <figure class="player-figure">
-              <img id="space0-image" class="player-image" src="/keyboard-battle/images/white-image.png" alt="" />
+              <img id="space0-image" class="player-image" src="/images/white-image.png" alt="" />
             </figure>
             <div class="player-box">
               <div class="player-box-info">
@@ -354,7 +392,7 @@
           </div>
           <div id="space1" class="player-info">
             <figure class="player-figure">
-              <img id="space1-image" class="player-image" src="/keyboard-battle/images/white-image.png" alt="" />
+              <img id="space1-image" class="player-image" src="/images/white-image.png" alt="" />
             </figure>
             <div class="player-box">
               <div class="player-box-info">
@@ -374,7 +412,7 @@
           <div id="space2" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space2-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space2-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space2-host">
@@ -391,7 +429,7 @@
           <div id="space3" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space3-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space3-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space3-host">
@@ -408,7 +446,7 @@
           <div id="space4" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space4-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space4-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space4-host">
@@ -425,7 +463,7 @@
           <div id="space5" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space5-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space5-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space5-host">
@@ -442,7 +480,7 @@
           <div id="space6" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space6-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space6-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space6-host">
@@ -459,7 +497,7 @@
           <div id="space7" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space7-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space7-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space7-host">
@@ -476,7 +514,7 @@
           <div id="space8" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space8-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space8-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space8-host">
@@ -493,7 +531,7 @@
           <div id="space9" class="spectator">
             <div class="spectator-info">
               <figure class="spectator-figure">
-                <img id="space9-image" class="spectator-image" src="/keyboard-battle/images/white-image.png" alt="" />
+                <img id="space9-image" class="spectator-image" src="/images/white-image.png" alt="" />
               </figure>
               <div class="spectator-box">
                 <span id="space9-host">
@@ -507,7 +545,6 @@
               이동
             </button>
           </div>
-
         </div>
       </div>
     </main>
@@ -519,6 +556,15 @@
         <input id="chat-input" class="form-control chat-input" type="text" placeholder="메시지 입력" />
       </div>
     </div>
+  </div>
+  <div class="loading-container">
+    <div class="loading-box">
+      <div class="progress loading-box" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div id="progress-percentage" class="progress-text">0%</div>
+        <div id="progress-bar-value" class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 0%"></div>
+      </div>
+    </div>
+    <p id="loading-text">연결중...</p>
   </div>
   <!-- User Info Modal -->
   <div class="modal fade" id="user-info" tabindex="-1" aria-labelledby="user-info-label" aria-hidden="true">

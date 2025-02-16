@@ -1,3 +1,4 @@
+<%@page import="dao.UserRoomDAO"%>
 <%@page import="socket.RoomChat"%>
 <%@page import="dto.UserDTO"%>
 <%@page import="dao.UserDAO"%>
@@ -15,6 +16,7 @@ String pageString = request.getParameter("page");
 
 RoomDAO roomDao = new RoomDAO();
 UserDAO userDao = new UserDAO();
+UserRoomDAO userRoomDao = new UserRoomDAO();
 
 JSONArray roomList = new JSONArray();
 
@@ -31,7 +33,7 @@ JSONObject jsonResponse = new JSONObject();
 jsonResponse.put("roomCount", totalCount);
 
 for (RoomDTO room : rooms) {
-	int numberOfClientInRoom = RoomChat.getNumberOfClientsInRoom(room.getId());
+	int clientInRoom = userRoomDao.readUserRoomCountByRoomId(room.getId());
 	UserDTO user = userDao.readUserById(room.getUserId());
 	boolean isPassword = true;
 	if (room.getPassword().equals("")) {
@@ -44,7 +46,7 @@ for (RoomDTO room : rooms) {
 	json.put("roomPassword", isPassword);
 	json.put("roomAllowSpectator", room.isAllowSpectator());
 	json.put("roomIsInGame", room.isIngame());
-	json.put("roomClientCount", numberOfClientInRoom);
+	json.put("roomClientCount", clientInRoom);
 	roomList.add(json);
 }
 jsonResponse.put("roomList", roomList);

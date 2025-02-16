@@ -17,6 +17,39 @@ figure {
   margin: 0;
 }
 
+p {
+  margin: 0;
+}
+
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(100, 100, 100, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.loading-box {
+  width: 300px;
+  height: 30px;
+}
+
+.progress-text {
+  position: absolute;
+  top: calc(50% - 12px);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #3a3a3a;
+}
+
 .container {
   min-width: 920px;
   width: 1500px;
@@ -49,7 +82,6 @@ figure {
 }
 
 .room-header-title {
-  margin: 0px;
   padding: 10px 5px;
   font-size: 1.5rem;
   font-weight: bold;
@@ -209,7 +241,6 @@ figure {
   font-weight: bold;
   padding: 2px;
   padding-left: 10px;
-  margin: 0;
 }
 
 .spectators-list {
@@ -316,7 +347,6 @@ figure {
   overflow-y: auto;
   border-radius: 5px;
   background-color: #ffffff;
-  overflow-y: scroll;
   scrollbar-width: 7px;
 
   &::-webkit-scrollbar {

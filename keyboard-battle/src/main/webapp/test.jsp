@@ -25,7 +25,7 @@ if (cookies != null) {
 			loginCookie.setMaxAge(0);
 			response.addCookie(loginCookie);
 			Cookie cookie = new Cookie("JSESSIONID", "123");
-			cookie.setPath("/keyboard-battle");
+			cookie.setPath("/");
 			cookie.setHttpOnly(true);
 			response.addCookie(cookie);
 			break;

@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="/keyboard-battle/styles/header.css">
-  <link rel="stylesheet" href="/keyboard-battle/styles/free-channel.css">
+  <link rel="stylesheet" href="/styles/header.css">
+  <link rel="stylesheet" href="/styles/free-channel.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-  <script src="/keyboard-battle/jquery.twbsPagination.min.js"></script>
+  <script src="/jquery.twbsPagination.min.js"></script>
   <script>
     let userLocation = "";
     let searchInput = "";
@@ -38,7 +38,7 @@
           },
           success: function (response) {
             if (response.result === 'success') {
-              window.location.href = '/keyboard-battle/room?id=' + roomId;
+              window.location.href = '/room?id=' + roomId;
             } else {
               if (response.exist === 'false') {
                 alert('해당 방이 존재하지 않습니다.');
@@ -157,13 +157,13 @@
         type: 'GET',
         url: './get-user.jsp',
         success: function (response) {
-          response.thumbnail = response.thumbnail ? response.thumbnail : "/keyboard-battle/images/no-image.png";
+          response.thumbnail = response.thumbnail ? response.thumbnail : "/images/no-image.png";
           $('#user-name').text(response.nickname);
           $('#user-level').text("레벨 " + response.level);
           $('#user-exp').text(response.exp);
           $('#user-max-exp').text(response.level * 10);
           $('#user-image').attr('src', response.thumbnail);
-          userLocation = "/keyboard-battle/profile?user=" + response.nickname;
+          userLocation = "/profile?user=" + response.nickname;
         }
       });
       $.ajax({
@@ -174,7 +174,7 @@
           userList.empty();
           response.forEach((user) => {
             userList.append(`
-				<div id="user-${user.nickname}" class="user-list-item" onclick="window.location.href = '/keyboard-battle/profile/?user=${user.nickname}'">
+				<div id="user-${user.nickname}" class="user-list-item" onclick="window.location.href = '/profile/?user=${user.nickname}'">
 					<span class="user-list-level">${user.level}</span>
 					<span class="user-list-name">${user.nickname}</span>
 				</div>
@@ -211,7 +211,7 @@
               clearInterval(fetchDataInterval);
               clearInterval(fetchClientDataInterval);
               clearInterval(fetchTableDataInterval);
-              window.location.href = '/keyboard-battle/room?id=' + response.roomId;
+              window.location.href = '/room?id=' + response.roomId;
             } else {
               alert('방 생성에 실패했습니다.');
             }
@@ -237,7 +237,7 @@
           },
           success: function (response) {
             if (response.result === 'success') {
-              window.location.href = '/keyboard-battle/room?id=' + roomId;
+              window.location.href = '/room?id=' + roomId;
             } else {
               if (response.exist === 'false') {
                 $('#password-form-error-msg').text('해당 방이 존재하지 않습니다.');
@@ -267,7 +267,7 @@
         window.location.href = userLocation;
       });
 
-      const ws = new WebSocket('/keyboard-battle/free-chat');
+      const ws = new WebSocket('/free-chat');
       ws.onopen = function () {
         // console.log('connected');
       };
@@ -348,14 +348,14 @@
 <body>
   <header class="root-header">
     <h1>
-      <a href="/keyboard-battle">Keyboard Battle</a>
+      <a href="/">Keyboard Battle</a>
     </h1>
     <nav>
       <ul>
-        <li id="gamestart" style="display:none;"><a href="/keyboard-battle/free-channel">게임시작</a></li>
-        <li id="logout" style="display:none;"><a href="/keyboard-battle/login/logout.jsp">로그아웃</a></li>
-        <li id="login" style="display:none;"><a href="/keyboard-battle/login">로그인</a></li>
-        <li id="signup" style="display:none;"><a href="/keyboard-battle/signup">회원가입</a></li>
+        <li id="gamestart" style="display:none;"><a href="/free-channel">게임시작</a></li>
+        <li id="logout" style="display:none;"><a href="/login/logout.jsp">로그아웃</a></li>
+        <li id="login" style="display:none;"><a href="/login">로그인</a></li>
+        <li id="signup" style="display:none;"><a href="/signup">회원가입</a></li>
       </ul>
     </nav>
   </header>
@@ -368,7 +368,7 @@
       <p>내 정보</p>
       <div>
         <figure class="user-img">
-          <img id="user-image" src="/keyboard-battle/images/no-image.png" alt="">
+          <img id="user-image" src="/images/no-image.png" alt="">
         </figure>
         <p id="user-name" class="user-name"></p>
         <p id="user-level" class="user-level">레벨</p>

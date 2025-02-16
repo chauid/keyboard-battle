@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="/keyboard-battle/styles/header.css" />
-  <link rel="stylesheet" href="/keyboard-battle/styles/profile.css" />
+  <link rel="stylesheet" href="/styles/header.css" />
+  <link rel="stylesheet" href="/styles/profile.css" />
   <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
   <script>
     let userId = new URLSearchParams(window.location.search).get("user");
@@ -46,7 +46,7 @@
           $('#win').text(data.win);
           $('#defeat').text(data.defeat);
           $('#highscore').text(data.highScore);
-          $('#user-img').attr('src', data.thumbnail ? data.thumbnail : '/keyboard-battle/iamges/no-image.png');
+          $('#user-img').attr('src', data.thumbnail ? data.thumbnail : '/iamges/no-image.png');
           $('#description').text(data.description);
           $('#title').text(data.title == 'null' ? '칭호 없음' : data.title);
         }
@@ -58,14 +58,14 @@
 <body>
   <header class="root-header">
     <h1>
-      <a href="/keyboard-battle">Keyboard Battle</a>
+      <a href="/">Keyboard Battle</a>
     </h1>
     <nav>
       <ul>
-        <li id="gamestart" style="display:none;"><a href="/keyboard-battle/free-channel">게임시작</a></li>
-        <li id="logout" style="display:none;"><a href="/keyboard-battle/login/logout.jsp">로그아웃</a></li>
-        <li id="login" style="display:none;"><a href="/keyboard-battle/login">로그인</a></li>
-        <li id="signup" style="display:none;"><a href="/keyboard-battle/signup">회원가입</a></li>
+        <li id="gamestart" style="display:none;"><a href="/free-channel">게임시작</a></li>
+        <li id="logout" style="display:none;"><a href="/login/logout.jsp">로그아웃</a></li>
+        <li id="login" style="display:none;"><a href="/login">로그인</a></li>
+        <li id="signup" style="display:none;"><a href="/signup">회원가입</a></li>
       </ul>
     </nav>
   </header>
@@ -80,7 +80,7 @@
     <div class="row">
       <div class="col-12">
         <figure class="user-img">
-          <img id="user-img" src="/keyboard-battle/images/no-image.png" alt="">
+          <img id="user-img" src="/images/no-image.png" alt="">
         </figure>
       </div>
     </div>

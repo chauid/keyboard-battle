@@ -19,9 +19,10 @@ if (cookies != null) {
 }
 Object userId = session.getAttribute("user");
 if (userId == null) {
-	response.sendRedirect("/keyboard-battle");
+	response.sendRedirect("/");
+	return;
 }
 sessionDao.deleteUserSessionByUserId(Integer.parseInt(userId.toString()));
 session.invalidate();
-response.sendRedirect("/keyboard-battle");
+response.sendRedirect("/");
 %>

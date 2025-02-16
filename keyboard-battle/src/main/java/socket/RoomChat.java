@@ -49,7 +49,7 @@ public class RoomChat {
 			spaces.computeIfAbsent(roomId, k -> new int[10]); // 방에 10개의 공간 생성
 		}
 		roomSpace = spaces.get(roomId); // 생성 후 가져오기
-		Set<Session> roomSessions = rooms.get(this.roomId);
+		Set<Session> roomSessions = rooms.get(roomId);
 
 		UserDAO userDao = new UserDAO();
 		TitleDAO titleDao = new TitleDAO();
@@ -60,7 +60,7 @@ public class RoomChat {
 			sendToAllClientsInRoom("client::" + roomSessions.size() + "::" + maxUsersInRoom);
 			sendToAllClientsInRoom("title::" + room.getName());
 		} catch (IOException | IllegalStateException e) {
-			System.out.println("전송 끊김: 정상");
+			System.out.println("전송 끊김0: 정상");
 		}
 
 		for (int i = 0; i < roomSpace.length; i++) { // 모든 자리의 유저 정보 전송
@@ -77,6 +77,9 @@ public class RoomChat {
 			}
 			String isHost = room.getUserId() == user.getId() ? "true" : "false";
 
+			UserRoomDAO userRoomDao = new UserRoomDAO();
+			UserRoomDTO userRoom = userRoomDao.readUserRoomByUserId(user.getId());
+
 			String moveMessage = "move::";
 			moveMessage += i + "::"; // spaceIndex
 			moveMessage += user.getNickname() + "::";
@@ -84,12 +87,13 @@ public class RoomChat {
 			moveMessage += user.getCurrentExp() + "::";
 			moveMessage += user.getThumbnailImage() + "::";
 			moveMessage += titleName + "::";
-			moveMessage += isHost;
+			moveMessage += isHost + "::";
+			moveMessage += userRoom != null && userRoom.isReady() ? "on" : "off";
 
 			try {
 				sendToAllClientsInRoom(moveMessage);
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김1: 정상");
 			}
 		}
 	}
@@ -141,10 +145,10 @@ public class RoomChat {
 		if (roomSessions == null) {
 			return;
 		}
-		
+
 		RoomDAO roomDao = new RoomDAO();
 		UserRoomDAO userRoomDao = new UserRoomDAO();
-		
+
 		boolean isIngame = false;
 		List<UserRoomDTO> userRooms = userRoomDao.readUserRoomsByRoomId(this.roomId);
 		for (UserRoomDTO ur : userRooms) {
@@ -153,13 +157,12 @@ public class RoomChat {
 				break;
 			}
 		}
-		
-		if (isIngame) { // 유저가 게임중이라면 방은 유지
-			return;
+
+		if (isIngame) { // 유저가 게임중이라면 방은 유지 + 유저 정보도 유지(인게임에서 사용)
+			return; // 대신에 인게임에서 돌아올 때는 db(user-room)에서 유저를 삭제하고 와야 함.
 		}
 
 		roomSessions.remove(this.session);
-
 
 		if (roomSessions.isEmpty()) { // 유저가 모두 나간 경우
 			roomDao.deleteRoom(this.roomId); // cascade delete user_room
@@ -193,7 +196,7 @@ public class RoomChat {
 						}
 					}
 				} catch (IOException | IllegalStateException e) {
-					System.out.println("전송 끊김: 정상");
+					System.out.println("전송 끊김2: 정상");
 				}
 			}
 
@@ -224,7 +227,7 @@ public class RoomChat {
 							}
 						}
 					} catch (IOException | IllegalStateException e) {
-						System.out.println("전송 끊김: 정상");
+						System.out.println("전송 끊김3: 정상");
 					}
 				}
 				userRoomDao.deleteUserRoomBySocketSessionId(this.session.getId(), this.roomId);
@@ -241,7 +244,9 @@ public class RoomChat {
 		Set<Session> roomSessions = rooms.get(this.roomId);
 		synchronized (rooms) {
 			for (Session s : roomSessions) {
-				s.getBasicRemote().sendText(message);
+				if (s.isOpen()) {
+					s.getBasicRemote().sendText(message);
+				}
 			}
 		}
 	}
@@ -252,6 +257,19 @@ public class RoomChat {
 		UserRoomDTO userRoom = userRoomDao.readUserRoomByUserId(Integer.parseInt(userId));
 		if (userRoom == null) {
 			return;
+		}
+
+		Set<Session> roomSessions = rooms.get(this.roomId);
+		for (Session s : roomSessions) {
+			int[] roomSpace = spaces.get(roomId);
+			if (s.getId().equals(userRoom.getSocketSessionId())) { // 이미 등록된 세션이 있는 경우
+				try {
+					s.close(); // 기존 세션 종료
+					roomSpace[userRoom.getSpaceIndex()] = 0; // 자리 반환
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		userRoom.setSocketSessionId(session.getId());
@@ -301,7 +319,7 @@ public class RoomChat {
 			sendToAllClientsInRoom(moveMessage);
 			sendToAllClientsInRoom("host::" + hostIndex + "::" + roomSpace[hostIndex]);
 		} catch (IOException | IllegalStateException e) {
-			System.out.println("전송 끊김: 정상");
+			System.out.println("전송 끊김4: 정상");
 		}
 	}
 
@@ -384,14 +402,14 @@ public class RoomChat {
 		moveMessage += user.getThumbnailImage() + "::";
 		moveMessage += titleName + "::";
 		moveMessage += isHost;
-		
+
 		userRoomDao.updateUserRoom(userRoom);
 
 		try {
 			sendToAllClientsInRoom("remove::" + oldSpaceIndex);
 			sendToAllClientsInRoom(moveMessage);
 		} catch (IOException | IllegalStateException e) {
-			System.out.println("전송 끊김: 정상");
+			System.out.println("전송 끊김5: 정상");
 		}
 	}
 
@@ -404,7 +422,7 @@ public class RoomChat {
 			try {
 				sendToAllClientsInRoom("remove::" + spaceIndex);
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김6: 정상");
 			}
 		}
 	}
@@ -421,7 +439,7 @@ public class RoomChat {
 			try {
 				sendToAllClientsInRoom("host::" + spaceIndex + "::" + roomSpace[spaceIndex]);
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김7: 정상");
 			}
 		}
 	}
@@ -449,7 +467,7 @@ public class RoomChat {
 		try {
 			sendToAllClientsInRoom("ready::" + spaceIndex + "::" + readyState);
 		} catch (IOException | IllegalStateException e) {
-			System.out.println("전송 끊김: 정상");
+			System.out.println("전송 끊김8: 정상");
 		}
 	}
 
@@ -462,7 +480,7 @@ public class RoomChat {
 			try {
 				session.getBasicRemote().sendText("start::false::auth");
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김9: 정상");
 			}
 			return;
 		}
@@ -474,44 +492,44 @@ public class RoomChat {
 		if (roomSpace[1] != 0) {
 			playerCount++;
 		}
-		
+
 		if (playerCount < 2) { // 플레이어가 2명이어야 시작 가능
 			try {
 				session.getBasicRemote().sendText("start::false::two");
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김10: 정상");
 			}
 			return;
 		}
-		
+
 		List<UserRoomDTO> userRoom = userRoomDao.readUserRoomsByRoomId(this.roomId);
 		boolean allReady = true;
 		for (UserRoomDTO ur : userRoom) {
-			if(ur.getUserId() == userId) { // 방장은 준비에서 제외
-                continue;
+			if (ur.getUserId() == userId) { // 방장은 준비에서 제외
+				continue;
 			}
 			if (!ur.isReady()) {
 				allReady = false;
 				break;
 			}
 		}
-		
+
 		if (allReady) {
 			for (UserRoomDTO ur : userRoom) {
 				ur.setIngame(true);
-                userRoomDao.updateUserRoom(ur);
+				userRoomDao.updateUserRoom(ur);
 			}
-			
+
 			try {
 				sendToAllClientsInRoom("start::true::null");
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김11: 정상");
 			}
 		} else {
 			try {
 				session.getBasicRemote().sendText("start::false::ready");
 			} catch (IOException | IllegalStateException e) {
-				System.out.println("전송 끊김: 정상");
+				System.out.println("전송 끊김12: 정상");
 			}
 		}
 	}
