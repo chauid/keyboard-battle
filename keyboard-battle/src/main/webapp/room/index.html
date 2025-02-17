@@ -228,11 +228,8 @@
       ws = new WebSocket("/room-chat/" + roomId);
       ws.onopen = function () {
         myNickname = document.cookie.split('; ').find(row => row.startsWith('nickname=')).split('=')[1];
-        const value = `; ${document.cookie}`;
-        const parts = value.split("; userid=");
-        if (parts.length === 2) {
-          myUserId = parts.pop().split(";").shift();
-        }
+        myUserId = document.cookie.split('; ').find(row => row.startsWith('userid=')).split('=')[1];
+
         ws.send("new::" + myUserId);
         $('.container').css('filter', 'blur(5px)');
         $('#loading-text').text('유저 목록 불러오는 중...');
@@ -243,7 +240,7 @@
           $('#loading-text').text('로딩이 너무 오래 걸리면, 새로고침을 시도해주세요. 10초 후 새로고침됩니다.');
         }, 10000);
         refreshInterval = setTimeout(() => {
-          location.reload();
+          window.location.reload();
         }, 20000);
       };
 
@@ -285,7 +282,7 @@
       };
 
       ws.onclose = function () {
-        // console.log('disconnected');
+        window.location.reload();
       };
       ws.onerror = function () {
         // console.log('error');

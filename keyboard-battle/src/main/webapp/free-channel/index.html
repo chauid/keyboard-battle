@@ -81,7 +81,7 @@
           const roomList = $('#room-list-items');
           roomList.empty();
           responseList.forEach((res) => {
-            const isIngame = res.isIngame ? "게임중" : "대기중";
+            const isIngame = res.roomIsInGame ? "게임중" : "대기중";
             const allowSpector = res.roomAllowSpectator === true ? "10" : "2";
             const allowSpectorMsg = res.roomAllowSpectator === true ? "관전가능" : "관전불가";
             const isPassword = res.roomPassword ? "<i class=\"bi bi-key-fill\"></i>" : "";
@@ -134,7 +134,7 @@
           const roomList = $('#room-list-items');
           roomList.empty();
           responseList.forEach((res) => {
-            const isIngame = res.isIngame ? "게임중" : "대기중";
+            const isIngame = res.roomIsInGame ? "게임중" : "대기중";
             const allowSpector = res.roomAllowSpectator === true ? "10" : "2";
             const allowSpectorMsg = res.roomAllowSpectator === true ? "관전가능" : "관전불가";
             const isPassword = res.roomPassword ? "<i class=\"bi bi-key-fill\"></i>" : "";

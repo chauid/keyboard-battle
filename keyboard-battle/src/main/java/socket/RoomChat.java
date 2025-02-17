@@ -39,15 +39,25 @@ public class RoomChat {
 		RoomDTO room = roomDao.readRoomById(roomId);
 		if (room == null) {
 			synchronized (rooms) {
-				if(session.isOpen()) {
+				if (session.isOpen()) {
 					try {
 						session.getBasicRemote().sendText("end");
 					} catch (IOException e) {
 						System.out.println("전송 끊김0: 정상");
 					}
-				}				
+				}
 			}
-			return;
+		}
+		if (room.isIngame()) {
+			synchronized (rooms) {
+				if (session.isOpen()) {
+					try {
+						session.getBasicRemote().sendText("end");
+					} catch (IOException e) {
+						System.out.println("전송 끊김0: 정상");
+					}
+				}
+			}
 		}
 	}
 
@@ -101,6 +111,8 @@ public class RoomChat {
 
 		RoomDAO roomDao = new RoomDAO();
 		UserRoomDAO userRoomDao = new UserRoomDAO();
+		RoomDTO room = roomDao.readRoomById(this.roomId);
+		UserRoomDTO userRoom = userRoomDao.readUserRoomBySocketSessionId(session.getId(), this.roomId);
 
 		boolean isIngame = false;
 		List<UserRoomDTO> userRooms = userRoomDao.readUserRoomsByRoomId(this.roomId);
@@ -111,7 +123,13 @@ public class RoomChat {
 			}
 		}
 
-		if (isIngame) { // 유저가 게임중이라면 방은 유지 + 유저 정보도 유지(인게임에서 사용)
+		if (isIngame) { // 유저가 게임중이라면 방은 그대로 유지. 유저 정보만 삭제
+			roomSessions.remove(session);
+			for (int i = 0; i < roomSpace.length; i++) {
+				if (roomSpace[i] == userRoom.getUserId()) {
+					roomSpace[i] = 0;
+				}
+			}
 			return; // 대신에 인게임에서 돌아올 때는 db(user-room)에서 유저를 삭제하고 와야 함.
 		}
 
@@ -125,10 +143,6 @@ public class RoomChat {
 		}
 
 		int userCount = roomSessions.size();
-
-		RoomDTO room = roomDao.readRoomById(this.roomId);
-		UserRoomDTO userRoom = userRoomDao.readUserRoomBySocketSessionId(session.getId(), this.roomId);
-
 		int maxUsersInRoom = room.isAllowSpectator() ? 10 : 2;
 		synchronized (rooms) {
 			if (userRoom != null) { // 소켓에 유저를 등록한 이후
@@ -207,7 +221,7 @@ public class RoomChat {
 	private void newUserRegist(String message, Session session) {
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO room = roomDao.readRoomById(roomId);
-		
+
 		int[] roomSpace = spaces.get(this.roomId);
 		rooms.computeIfAbsent(this.roomId, k -> ConcurrentHashMap.newKeySet()).add(session); // 세션 추가
 		if (roomSpace == null) { // 없으면 생성
@@ -233,7 +247,6 @@ public class RoomChat {
 				continue;
 			}
 
-			room = roomDao.readRoomById(roomId);
 			UserDTO user = userDao.readUserById(roomSpace[i]);
 			TitleDTO title = titleDao.readTitleById(user.getTitle());
 			String titleName = "null";
@@ -261,7 +274,7 @@ public class RoomChat {
 				System.out.println("전송 끊김4: 정상");
 			}
 		}
-		
+
 		int userId = Integer.parseInt(message.split("::")[1]);
 		UserRoomDAO userRoomDao = new UserRoomDAO();
 		UserRoomDTO userRoom = new UserRoomDTO();
@@ -269,7 +282,7 @@ public class RoomChat {
 		userRoom.setRoomId(this.roomId);
 		userRoomDao.createUserRoom(userRoom);
 
-		for (Session s : roomSessions) {;
+		for (Session s : roomSessions) {
 			if (s.getId().equals(userRoom.getSocketSessionId())) { // 이미 등록된 세션이 있는 경우
 				try {
 					s.close(); // 기존 세션 종료
@@ -523,6 +536,8 @@ public class RoomChat {
 				ur.setIngame(true);
 				userRoomDao.updateUserRoom(ur);
 			}
+			room.setIngame(true);
+			roomDao.updateRoom(room);
 
 			try {
 				sendToAllClientsInRoom("start::true::null");

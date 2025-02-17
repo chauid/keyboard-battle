@@ -2,17 +2,18 @@ package socket;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import dao.ChatLogDAO;
+import dao.RoomDAO;
 import dao.TitleDAO;
 import dao.UserDAO;
 import dao.UserRoomDAO;
 import dto.ChatLogDTO;
+import dto.RoomDTO;
 import dto.TitleDTO;
 import dto.UserDTO;
 import dto.UserRoomDTO;
@@ -27,7 +28,6 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/in-game/{roomId}")
 public class InGame {
 	private static final Map<String, Set<Session>> rooms = Collections.synchronizedMap(new ConcurrentHashMap<>());
-	private static final Map<String, Boolean> isPlaying = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	private static final Map<String, int[]> spaces = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	private static final Map<String, ScheduledExecutorService> schedules = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	private String roomId;
@@ -36,17 +36,35 @@ public class InGame {
 	public void onOpen(@PathParam("roomId") String roomId, Session session) {
 		this.roomId = roomId;
 
-		int[] roomSpace = spaces.get(roomId);
-		rooms.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet()).add(session); // 세션 추가
-		schedules.computeIfAbsent(roomId, k -> null); // 스케줄러 추가
-		if (roomSpace == null) { // 없으면 생성
-			spaces.computeIfAbsent(roomId, k -> new int[10]); // 방에 10개의 공간 생성
+		RoomDAO roomDao = new RoomDAO();
+		RoomDTO room = roomDao.readRoomById(roomId);
+		if (room == null) {
+			synchronized (rooms) {
+				if (session.isOpen()) {
+					try {
+						session.getBasicRemote().sendText("end");
+					} catch (IOException e) {
+						System.out.println("전송 끊김0: 정상");
+					}
+				}
+			}
+		}
+		if (!room.isIngame()) {
+			synchronized (rooms) {
+				if (session.isOpen()) {
+					try {
+						session.getBasicRemote().sendText("end");
+					} catch (IOException e) {
+						System.out.println("전송 끊김0: 정상");
+					}
+				}
+			}
 		}
 	}
 
 	@OnMessage
 	public void onMessage(String message, Session session) throws IOException {
-		System.out.println("Received message: " + message);
+//		System.out.println("Received message: " + message);
 		String messageType = message.split("::")[0];
 		switch (messageType) {
 		case "check":
@@ -89,6 +107,15 @@ public class InGame {
 	}
 
 	private void checkUser(String message, Session session) {
+		int[] roomSpace = spaces.get(this.roomId);
+		rooms.computeIfAbsent(this.roomId, k -> ConcurrentHashMap.newKeySet()).add(session); // 세션 추가
+		schedules.computeIfAbsent(roomId, k -> null); // 스케줄러 추가
+		if (roomSpace == null) { // 없으면 생성
+			spaces.computeIfAbsent(this.roomId, k -> new int[10]); // 방에 10개의 공간 생성
+		}
+		roomSpace = spaces.get(this.roomId); // 생성 후 가져오기
+		Set<Session> roomSessions = rooms.get(this.roomId);
+
 		int userId = Integer.parseInt(message.split("::")[1]);
 
 		UserRoomDAO userRoomDao = new UserRoomDAO();
@@ -98,7 +125,6 @@ public class InGame {
 		}
 
 		int userSpaceIndex = userRoom.getSpaceIndex();
-		int[] roomSpace = spaces.get(this.roomId);
 		roomSpace[userSpaceIndex] = userId;
 
 		synchronized (rooms) {
@@ -112,30 +138,35 @@ public class InGame {
 				}
 			}
 		}
-		
-		UserDAO userDao = new UserDAO();
-		UserDTO user = userDao.readUserById(userId);
-		TitleDAO titleDao = new TitleDAO();
-		TitleDTO title = titleDao.readTitleById(user.getTitle());
-		String titleName = "null";
-		if (title != null) {
-			titleName = title.getName();
-		}
-		
-		String placeMessage = "place::";
-		placeMessage += userSpaceIndex + "::";
-		placeMessage += user.getNickname() + "::";
-		placeMessage += user.getLevel() + "::";
-		placeMessage += user.getThumbnailImage() + "::";
-		placeMessage += titleName + "::";
 
-		try {
-			sendToAllClientsInRoom(placeMessage);
-		} catch (IllegalStateException | IOException e) {
-			System.out.println("전송 끊김: 정상");
+		UserDAO userDao = new UserDAO();
+		TitleDAO titleDao = new TitleDAO();
+
+		for (int i = 0; i < roomSpace.length; i++) { // 모든 자리의 유저 정보 전송
+			if (roomSpace[i] == 0) {
+				continue;
+			}
+			
+			UserDTO user = userDao.readUserById(roomSpace[i]);
+			TitleDTO title = titleDao.readTitleById(user.getTitle());
+			String titleName = "null";
+			if (title != null) {
+				titleName = title.getName();
+			}
+
+			String placeMessage = "place::";
+			placeMessage += userSpaceIndex + "::";
+			placeMessage += user.getNickname() + "::";
+			placeMessage += user.getLevel() + "::";
+			placeMessage += user.getThumbnailImage() + "::";
+			placeMessage += titleName + "::";
+
+			try {
+				sendToAllClientsInRoom(placeMessage);
+			} catch (IllegalStateException | IOException e) {
+				System.out.println("전송 끊김: 정상");
+			}
 		}
-		
-		
 	}
 
 	private void sendChatMessage(String message, Session session) throws IOException {

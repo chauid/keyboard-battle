@@ -40,6 +40,12 @@ public class RoomMiddleware implements Filter {
 			res.sendRedirect("/free-channel");
 			return;
 		}
+		
+		if(roomDto.isIngame()) { // 게임 중인 방
+						//게임 중인 유저는 통과해야 함
+            res.sendRedirect("/free-channel");
+            return;
+		}
 
 		boolean allowSpectator = roomDto.isAllowSpectator();
 //		System.out.println("client: " + userCount);
