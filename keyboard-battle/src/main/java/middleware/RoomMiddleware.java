@@ -27,13 +27,13 @@ public class RoomMiddleware implements Filter {
 			chain.doFilter(request, response);
 			return;
 		}
+		
 //		System.out.println("room middleware 실행");
 
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO roomDto = roomDao.readRoomById(roomId);
 		UserRoomDAO userRoomDao = new UserRoomDAO();
 		int userCount = userRoomDao.readUserRoomCountByRoomId(roomId);
-		int userId = Integer.parseInt(userSession.toString());
 
 		if (roomDto == null) { // 방 정보가 없음
 //			System.out.println("방 정보가 없음");
@@ -48,33 +48,27 @@ public class RoomMiddleware implements Filter {
 //			System.out.println("비밀번호가 없는 방");
 			if (allowSpectator) {
 				if (userCount > 10) { // 10명 인원 제한
-					userRoomDao.deleteUserRoomByUserId(userId);
 					res.sendRedirect("/free-channel");
 					return;
 				}
-				userRoomDao.createUserRoom(userId, roomId);
 				chain.doFilter(request, response);
 				return;
 			} else {
 				if (userCount > 2) { // 2명 인원 제한
-					userRoomDao.deleteUserRoomByUserId(userId);
 					res.sendRedirect("/free-channel");
 					return;
 				}
-				userRoomDao.createUserRoom(userId, roomId);
 				chain.doFilter(request, response);
 				return;
 			}
 		} else {
 			if (passwordSession == null) { // 세션에 비밀번호가 없음
 //				System.out.println("세션에 비밀번호가 없음");
-				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/free-channel");
 				return;
 			}
 			if (!roomDto.getPassword().equals(passwordSession.toString())) { // 비밀번호가 일치하지 않음
 //				System.out.println("비밀번호가 일치하지 않음");
-				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/free-channel");
 				return;
 			}
@@ -82,20 +76,16 @@ public class RoomMiddleware implements Filter {
 
 		if (allowSpectator) {
 			if (userCount > 10) { // 10명 인원 제한
-				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/free-channel");
 				return;
 			}
-			userRoomDao.createUserRoom(userId, roomId);
 			chain.doFilter(request, response);
 			return;
 		} else {
 			if (userCount > 2) { // 2명 인원 제한
-				userRoomDao.deleteUserRoomByUserId(userId);
 				res.sendRedirect("/free-channel");
 				return;
 			}
-			userRoomDao.createUserRoom(userId, roomId);
 			chain.doFilter(request, response);
 			return;
 		}

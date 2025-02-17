@@ -275,6 +275,9 @@
           case "start":
             receiveStartMessage(event.data);
             break;
+            case "end":
+              window.location.href = "/free-channel";
+              break;
           default:
             console.log("unknown message type");
             break;
