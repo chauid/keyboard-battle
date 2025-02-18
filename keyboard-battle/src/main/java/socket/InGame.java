@@ -83,11 +83,22 @@ public class InGame {
 			System.out.println("Unknown message type: " + messageType);
 			break;
 		}
+		int[] roomSpace = spaces.get(this.roomId);
+		if (roomSpace != null) {
+			System.out.print("Room space: ");
+			for (int i = 0; i < roomSpace.length; i++) {
+				System.out.print(roomSpace[i] + " ");
+			}
+			System.out.println();
+		}
 	}
 
 	@OnClose
 	public void onClose(Session session) {
-
+		Set<Session> roomSessions = rooms.get(this.roomId);
+		synchronized (rooms) {
+			roomSessions.remove(session);
+		}
 	}
 
 	@OnError
@@ -114,7 +125,6 @@ public class InGame {
 			spaces.computeIfAbsent(this.roomId, k -> new int[10]); // 방에 10개의 공간 생성
 		}
 		roomSpace = spaces.get(this.roomId); // 생성 후 가져오기
-		Set<Session> roomSessions = rooms.get(this.roomId);
 
 		int userId = Integer.parseInt(message.split("::")[1]);
 
@@ -146,7 +156,7 @@ public class InGame {
 			if (roomSpace[i] == 0) {
 				continue;
 			}
-			
+
 			UserDTO user = userDao.readUserById(roomSpace[i]);
 			TitleDTO title = titleDao.readTitleById(user.getTitle());
 			String titleName = "null";
@@ -159,10 +169,26 @@ public class InGame {
 			placeMessage += user.getNickname() + "::";
 			placeMessage += user.getLevel() + "::";
 			placeMessage += user.getThumbnailImage() + "::";
-			placeMessage += titleName + "::";
+			placeMessage += titleName;
 
 			try {
 				sendToAllClientsInRoom(placeMessage);
+			} catch (IllegalStateException | IOException e) {
+				System.out.println("전송 끊김: 정상");
+			}
+		}
+
+		int userRoomCount = userRoomDao.readUserRoomCountByRoomId(this.roomId);
+		int userCount = 0;
+		for (int i = 0; i < roomSpace.length; i++) {
+			if (roomSpace[i] != 0) {
+				userCount++;
+			}
+		}
+
+		if (userCount == userRoomCount) {
+			try {
+				sendToAllClientsInRoom("start");
 			} catch (IllegalStateException | IOException e) {
 				System.out.println("전송 끊김: 정상");
 			}
@@ -175,9 +201,9 @@ public class InGame {
 			if (roomSessions == null) {
 				return;
 			}
-
 			String chatClient = message.split("::")[1];
-			String chatMsg = message.split("::")[2];
+			String clientType = message.split("::")[2];
+			String chatMsg = message.split("::")[3];
 			UserDAO userDAO = new UserDAO();
 			UserDTO user = new UserDTO();
 			user = userDAO.readUserByNickname(chatClient);
@@ -186,13 +212,13 @@ public class InGame {
 			ChatLogDTO chatLog = new ChatLogDTO();
 			chatLog.setUserId(user.getId());
 			chatLog.setMessage(chatMsg);
-			chatLog.setPlace(ChatLogDTO.Place.ROOM);
+			chatLog.setPlace(ChatLogDTO.Place.INGAME);
 			chatLogDAO.createChatLog(chatLog);
 
 			for (Session s : roomSessions) {
 				if (s.isOpen()) {
 					if (!s.equals(session)) { // 메시지를 보낸 클라이언트는 제외
-						s.getBasicRemote().sendText(message);
+						s.getBasicRemote().sendText("chat::" + chatClient + "::" + clientType + "::" + chatMsg);
 					}
 				}
 			}

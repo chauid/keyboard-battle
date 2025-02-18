@@ -47,6 +47,7 @@ public class RoomChat {
 					}
 				}
 			}
+			return;
 		}
 		if (room.isIngame()) {
 			synchronized (rooms) {
@@ -221,6 +222,9 @@ public class RoomChat {
 	private void newUserRegist(String message, Session session) {
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO room = roomDao.readRoomById(roomId);
+		if (room == null) {
+			return;
+		}
 
 		int[] roomSpace = spaces.get(this.roomId);
 		rooms.computeIfAbsent(this.roomId, k -> ConcurrentHashMap.newKeySet()).add(session); // 세션 추가
@@ -472,6 +476,7 @@ public class RoomChat {
 			userRoom.setReady(true);
 		}
 		userRoomDao.updateUserRoom(userRoom);
+		
 		int[] roomSpace = spaces.get(this.roomId);
 		int spaceIndex = 0;
 		for (int i = 0; i < roomSpace.length; i++) {

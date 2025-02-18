@@ -5,6 +5,7 @@ import java.io.IOException;
 import dao.RoomDAO;
 import dao.UserRoomDAO;
 import dto.RoomDTO;
+import dto.UserRoomDTO;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -42,7 +43,16 @@ public class RoomMiddleware implements Filter {
 		}
 		
 		if(roomDto.isIngame()) { // 게임 중인 방
-						//게임 중인 유저는 통과해야 함
+			int userId = Integer.parseInt(userSession.toString());
+			UserRoomDTO userRoom = userRoomDao.readUserRoomByUserId(userId);
+			if(userRoom == null) { // 해당 방에 유저가 없음
+				res.sendRedirect("/free-channel");
+				return;
+			}
+			if(userRoom.isIngame()) {
+				res.sendRedirect("/room/in-game?id=" + roomId);
+				return;
+			}
             res.sendRedirect("/free-channel");
             return;
 		}

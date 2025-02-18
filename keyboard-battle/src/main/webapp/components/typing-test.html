@@ -31,7 +31,7 @@
   
       // 한글 범위가 아닐 경우
       if (charCode < BASE_CODE || charCode > BASE_CODE + 11171) {
-          return 0;
+          return 1;
       }
   
       // 초성, 중성, 종성 인덱스 계산
@@ -68,7 +68,7 @@
   }
   
   // 테스트
-  console.log(countSentenceKeystrokes("곡가가뷁")); // 2 (초성 + 중성)
+  console.log(countSentenceKeystrokes("곡가가뷁asdf")); // 2 (초성 + 중성)
   console.log(countSentenceKeystrokes("각")); // 3 (초성 + 중성 + 종성)
   console.log(countSentenceKeystrokes("깎")); // 4 (초성 + 중성 + 겹받침)
   console.log(countSentenceKeystrokes("밟")); // 4 (초성 + 중성 + 겹받침)

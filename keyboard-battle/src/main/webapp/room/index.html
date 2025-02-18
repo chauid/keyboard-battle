@@ -289,7 +289,10 @@
       };
 
       function sendChatMessage() {
-        const chatInput = $("#chat-input").val();
+        const chatInput = $('#chat-input').val().trim();
+        if (chatInput === '' || chatInput === null) {
+          return;
+        }
         const chatMessage = `chat::${myNickname}::${chatInput}`;
         const chatBody = $("#chat-box-body");
         chatBody.append(`<div class="message-box"><span class="chat-user">${myNickname}</span><span class="chat-message">${chatInput}</span></div>`);

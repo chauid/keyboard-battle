@@ -93,6 +93,7 @@ public class UserRoomDAO {
 				userRoom.setSocketSessionId(rs.getString("socket_session_id"));
 				userRoom.setIngame(rs.getBoolean("is_ingame"));
 				userRoom.setReady(rs.getBoolean("is_ready"));
+				userRoom.setSpaceIndex(rs.getInt("space_index"));
 				list.add(userRoom);
 			}
 		} catch (Exception e) {
@@ -143,6 +144,7 @@ public class UserRoomDAO {
 				userRoom.setSocketSessionId(rs.getString("socket_session_id"));
 				userRoom.setIngame(rs.getBoolean("is_ingame"));
 				userRoom.setReady(rs.getBoolean("is_ready"));
+				userRoom.setSpaceIndex(rs.getInt("space_index"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -168,8 +170,10 @@ public class UserRoomDAO {
 				userRoom = new UserRoomDTO();
 				userRoom.setUserId(rs.getInt("user_id"));
 				userRoom.setRoomId(rs.getString("room_id"));
+				userRoom.setSocketSessionId(rs.getString("socket_session_id"));
 				userRoom.setIngame(rs.getBoolean("is_ingame"));
 				userRoom.setReady(rs.getBoolean("is_ready"));
+				userRoom.setSpaceIndex(rs.getInt("space_index"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
