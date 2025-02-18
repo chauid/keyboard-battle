@@ -5,7 +5,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import dao.ChatLogDAO;
 import dao.RoomDAO;
@@ -29,7 +31,7 @@ import jakarta.websocket.server.ServerEndpoint;
 public class InGame {
 	private static final Map<String, Set<Session>> rooms = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	private static final Map<String, int[]> spaces = Collections.synchronizedMap(new ConcurrentHashMap<>());
-	private static final Map<String, ScheduledExecutorService> schedules = Collections.synchronizedMap(new ConcurrentHashMap<>());
+	private static final Map<String, Boolean> isGameStarted = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	private String roomId;
 
 	@OnOpen
@@ -83,14 +85,14 @@ public class InGame {
 			System.out.println("Unknown message type: " + messageType);
 			break;
 		}
-		int[] roomSpace = spaces.get(this.roomId);
-		if (roomSpace != null) {
-			System.out.print("Room space: ");
-			for (int i = 0; i < roomSpace.length; i++) {
-				System.out.print(roomSpace[i] + " ");
-			}
-			System.out.println();
-		}
+//		int[] roomSpace = spaces.get(this.roomId);
+//		if (roomSpace != null) {
+//			System.out.print("Room space: ");
+//			for (int i = 0; i < roomSpace.length; i++) {
+//				System.out.print(roomSpace[i] + " ");
+//			}
+//			System.out.println();
+//		}
 	}
 
 	@OnClose
@@ -120,7 +122,6 @@ public class InGame {
 	private void checkUser(String message, Session session) {
 		int[] roomSpace = spaces.get(this.roomId);
 		rooms.computeIfAbsent(this.roomId, k -> ConcurrentHashMap.newKeySet()).add(session); // 세션 추가
-		schedules.computeIfAbsent(roomId, k -> null); // 스케줄러 추가
 		if (roomSpace == null) { // 없으면 생성
 			spaces.computeIfAbsent(this.roomId, k -> new int[10]); // 방에 10개의 공간 생성
 		}
@@ -186,13 +187,58 @@ public class InGame {
 			}
 		}
 
-		if (userCount == userRoomCount) {
-			try {
-				sendToAllClientsInRoom("start");
-			} catch (IllegalStateException | IOException e) {
-				System.out.println("전송 끊김: 정상");
-			}
+		if (userCount != userRoomCount) {
+			return;
 		}
+
+		try {
+			sendToAllClientsInRoom("start");
+		} catch (IllegalStateException | IOException e) {
+			System.out.println("전송 끊김: 정상");
+		}
+
+		if(isGameStarted.get(this.roomId) != null) { // 이미 게임이 시작되었을 경우 시간 정보를 전송하지 않음
+			return;
+		}
+
+		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+		for (int i = 5; i >= 0; i--) {
+			int count = i;
+			scheduler.schedule(() -> {
+				try {
+					sendToAllClientsInRoom("countdown::" + count);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}, 5 - i, TimeUnit.SECONDS);
+		}
+
+		scheduler.schedule(() -> {
+			scheduler.shutdown();
+		}, 5, TimeUnit.SECONDS);
+
+		for (int i = 305; i >= 0; i--) { // 게임 시간 5분
+			int time = i;
+			scheduler.schedule(() -> {
+				try {
+					sendToAllClientsInRoom("time::" + time);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}, 305 - i, TimeUnit.SECONDS);
+		}
+
+		scheduler.schedule(() -> {
+			scheduler.shutdown();
+			try {
+				sendToAllClientsInRoom("result");
+			} catch (IllegalStateException | IOException e) {
+				e.printStackTrace();
+			}
+		}, 305, TimeUnit.SECONDS);
+		
+		isGameStarted.computeIfAbsent(this.roomId, k -> true);
 	}
 
 	private void sendChatMessage(String message, Session session) throws IOException {

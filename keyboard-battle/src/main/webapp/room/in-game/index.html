@@ -70,13 +70,19 @@
     }
 
     function receivePlaceMessage(message) {
+      const spaceIndex = message.split("::")[1];
+      const userNickname = message.split("::")[2];
+      const userLevel = message.split("::")[3];
+      const userThumbnail = message.split("::")[4];
+      const userTitle = message.split("::")[5];
+
       $('#loading-text').text('다른 유저 기다리는 중...');
       $('#progress-bar-value').css('width', '67%');
       $('#progress-percentage').text('67%');
     }
 
     function receiveStartMessage(message) {
-      $('#loading-text').text('게임 시작!');
+      $('#loading-text').text('로딩 완료!');
       $('#progress-bar-value').css('width', '100%');
       $('#progress-percentage').text('100%');
       clearTimeout(refreshInterval);
@@ -87,11 +93,24 @@
     }
 
     function recieveCountdownMessage(message) {
-
+      const countdown = message.split("::")[1];
+      $('.countdown-screen').text(countdown);
+      if(countdown === "0") {
+        $('.countdown-screen').text('START!');
+        setTimeout(() => {
+          $('.countdown-screen').hide();
+        }, 1000);
+      }
     }
 
     function receiveTimeMessage(message) {
-
+      const time = message.split("::")[1];
+      if (time > 300) {
+        return;
+      }
+      const timeText = `${Math.floor(time / 60)}:${time % 60 < 10 ? "0" + time % 60 : time % 60}`;
+      $('.game-remain-time-text').text(timeText);
+      $('.countdown-screen').hide();
     }
 
     function receiveChatMessage(message) {
@@ -234,7 +253,19 @@
 </head>
 
 <style>
-
+  .countdown-screen {
+    position: absolute;
+    width: inherit;
+    height: inherit;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 5rem;
+    font-weight: 700;
+    color: white;
+    background-color: rgba(100, 100, 100, 0.7);
+    z-index: 1;
+  }
 </style>
 
 <body>
@@ -244,6 +275,7 @@
         <p id="player0-screen">ets709(상대 화면)</p>
       </div>
       <div class="game-main">
+        <div class="countdown-screen"></div>
         <div class="typing-text-container">
           <p class="typing-text">이건 좀 짧은 문장1</p>
           <p class="typing-text">이건 좀 짧은 문장2</p>
@@ -261,44 +293,51 @@
           <div class="game-info-bottom">
             <p class="game-combo-box">
               <span>Combo</span>
-              <span id="player0-combo" class="player-combo"></span>
+              <span id="player0-combo" class="player-combo">0</span>
             </p>
             <p class="game-bomb-box">
               <span>Bomb</span>
-              <span id="player0-game-bomb" class="player-game-bomb"></span>
+              <span id="player0-bomb" class="player-game-bomb">
+                <i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>
+                <i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>
+              </span>
             </p>
             <p class="game-attack-gauge-box">
               <span>공격 게이지</span>
-              <span id="player0-game-attack-gauge" class="player-game-attack-gauge"></span>
+              <span id="player0-game-attack-gauge" class="player-game-attack-gauge">
+                <span id="player0-attack-gauge-bar" class="attack-gauge-bar"></span>
+                <span id="player0-attack-gauge-text" class="attack-gauge-text">0</span>
+              </span>
             </p>
           </div>
           <div class="game-info-top">
             <div class="game-score-box">
               <span>점수</span>
-              <span id="player1-score" class="player-score">10,123,561</span>
+              <span id="player0-score" class="player-score">0</span>
             </div>
             <p class="game-average-typing-speed-box">
               <span>평균 타자속도</span>
-              <span id="player0-average-typing-speed" class="player-average-typing-speed"></span>
+              <span id="player0-average-typing-speed" class="player-average-typing-speed">0타</span>
             </p>
             <p class="game-average-accuracy-box">
               <span>평균 정확도</span>
-              <span id="player0-average-accuracy" class="player-average-accuracy"></span>
+              <span id="player0-average-accuracy" class="player-average-accuracy">0%</span>
             </p>
+            <br>
             <p class="game-current-typing-speed-box">
               <span>현재 타자속도</span>
-              <span id="player0-current-typing-speed" class="player-current-typing-speed"></span>
+              <span id="player0-current-typing-speed" class="player-current-typing-speed">0타</span>
             </p>
             <p class="game-current-accuracy-box">
               <span>현재 정확도</span>
-              <span id="player0-current-accuracy" class="player-current-accuracy"></span>
+              <span id="player0-current-accuracy" class="player-current-accuracy">0%</span>
             </p>
           </div>
         </div>
         <div class="game-remain-time-box">
           <p>남은 시간</p>
           <div class="game-remain-time">
-            <p class="game-remain-time-text">10:34</p>
+            <p class="game-remain-time-text">00:00</p>
           </div>
         </div>
       </div>
@@ -308,6 +347,7 @@
         <p id="player1-screen">플레이어1(내 화면)</p>
       </div>
       <div class="game-main">
+        <div class="countdown-screen"></div>
         <div class="typing-text-container">
           <p class="typing-text">너구리는 너굴너굴 글자 수 제한은 어디까지인가? 끝을 알 수 없는 길과 같다</p>
           <p class="typing-text">이건 좀 짧은 문장1</p>
@@ -327,11 +367,11 @@
           <div class="game-info-bottom">
             <p class="game-combo-box">
               <span>Combo</span>
-              <span id="player1-combo" class="player-combo">13</span>
+              <span id="player1-combo" class="player-combo">0</span>
             </p>
             <p class="game-bomb-box">
               <span>Bomb</span>
-              <span id="player1-game-bomb" class="player-game-bomb">
+              <span id="player1-bomb" class="player-game-bomb">
                 <i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>
                 <i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>
               </span>
@@ -339,39 +379,39 @@
             <p class="game-attack-gauge-box">
               <span>공격 게이지</span>
               <span id="player1-game-attack-gauge" class="player-game-attack-gauge">
-                <span class="attack-gauge-bar"></span>
-                <span class="attack-gauge-text">MAX</span>
+                <span id="player1-attack-gauge-bar" class="attack-gauge-bar"></span>
+                <span id="player1-attack-gauge-text" class="attack-gauge-text">0</span>
               </span>
             </p>
           </div>
           <div class="game-info-top">
             <div class="game-score-box">
               <span>점수</span>
-              <span id="player1-score" class="player-score">10,123,561</span>
+              <span id="player1-score" class="player-score">0</span>
             </div>
             <p class="game-average-typing-speed-box">
               <span>평균 타자속도</span>
-              <span id="player1-average-typing-speed" class="player-average-typing-speed">341타</span>
+              <span id="player1-average-typing-speed" class="player-average-typing-speed">0타</span>
             </p>
             <p class="game-average-accuracy-box">
               <span>평균 정확도</span>
-              <span id="player1-average-accuracy" class="player-average-accuracy">71%</span>
+              <span id="player1-average-accuracy" class="player-average-accuracy">0%</span>
             </p>
             <br>
             <p class="game-current-typing-speed-box">
               <span>현재 타자속도</span>
-              <span id="player1-current-typing-speed" class="player-current-typing-speed">395타</span>
+              <span id="player1-current-typing-speed" class="player-current-typing-speed">0타</span>
             </p>
             <p class="game-current-accuracy-box">
               <span>현재 정확도</span>
-              <span id="player1-current-accuracy" class="player-current-accuracy">98%</span>
+              <span id="player1-current-accuracy" class="player-current-accuracy">0%</span>
             </p>
           </div>
         </div>
         <div class="game-remain-time-box">
           <p>남은 시간</p>
           <div class="game-remain-time">
-            <p class="game-remain-time-text">10:34</p>
+            <p class="game-remain-time-text">00:00</p>
           </div>
         </div>
       </div>
@@ -388,15 +428,12 @@
             <p class="spectator">관전자1</p>
             <p class="spectator">관전자2</p>
             <p class="spectator">관전자3</p>
-            <p class="spectator">관전자4</p>
-            <p class="spectator">관전자5</p>
-            <p class="spectator">관전자6</p>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- <div class="loading-container">
+  <div class="loading-container">
     <div class="loading-box">
       <div class="progress loading-box" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
         <div id="progress-percentage" class="progress-text">0%</div>
@@ -404,7 +441,7 @@
       </div>
     </div>
     <p id="loading-text">연결중...</p>
-  </div> -->
+  </div>
 </body>
 
 </html>
