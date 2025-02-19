@@ -21,6 +21,11 @@
     let refreshInterval = null;
 
     let tajaStartTime = null;
+    let totalTajaSpeed = 0;
+    let currentTajaSpeed = 0;
+    let totalAccuracy = 0;
+    let currentAccuracy = 0;
+    let typingTextQueue = [];
 
     function countKeystrokesSentence(sentence) {
       const sentenceString = sentence ? sentence : "";
@@ -30,6 +35,7 @@
       }
       return totalKeyStrokes;
     }
+
     function countKeystrokes(hangulChar) {
       const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
       const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
@@ -64,9 +70,95 @@
       return keystrokes;
     }
 
+    function addText(position, text) {
+      const container = $(`#player${position}-typing-text-container`);
+      const newText = $("<p>").addClass("typing-text").text(text);
+
+      console.log(position, myPosition);
+      container.prepend(newText);
+      if (position === myPosition) {
+        typingTextQueue.push(text);
+      }
+
+      if (typingTextQueue.length > 12) {
+        console.log('게임 종료');
+      }
+      console.log(typingTextQueue);
+    }
+
+    function removeText(position) {
+      const container = document.getElementById(`player${position}-typing-text-container`);
+      const texts = container.getElementsByClassName("typing-text");
+
+      if (texts.length > 0) {
+        const lastText = texts[texts.length - 1];
+        lastText.style.animation = "fadeOut 0.2s ease-out forwards";
+
+        setTimeout(() => {
+          lastText.remove();
+          typingTextQueue.shift();
+          console.log(typingTextQueue);
+        }, 200);
+      }
+    }
+
     function receivePositionMessage(message) {
       const position = message.split("::")[1];
       myPosition = position;
+      if (position === "1") {
+        $('#player0-typing-input').prop('disabled', true);
+      } else if (position === "0") {
+        $('#player1-typing-input').prop('disabled', true);
+      }
+
+      $(`#player${position}-typing-input`).on('input', function () {
+        if (!tajaStartTime) {
+          tajaStartTime = new Date();
+        }
+
+        const input = $(this).val();
+        const sanitizedInput = input.replace(/::/g, '');
+        ws.send(`taja::${position}::${sanitizedInput}::${currentTajaSpeed}::${currentAccuracy}`);
+
+        if (countKeystrokesSentence(input) > countKeystrokesSentence(typingTextQueue[0])) {
+          removeText(position);
+          $(`#player${position}-typing-input`).val('');
+          tajaStartTime = null;
+          ws.send(`complete::${position}::${currentTajaSpeed}::${currentAccuracy}`);
+        }
+      });
+
+      $(`#player${position}-typing-input`).on('keypress', function (e) {
+        if (e.key === "Enter" && countKeystrokesSentence(input) === countKeystrokesSentence(typingTextQueue[0])) {
+          removeText(position);
+          $(`#player${position}-typing-input`).val('');
+          tajaStartTime = null;
+          ws.send(`complete::${position}::${currentTajaSpeed}::${currentAccuracy}`);
+        }
+      });
+
+      setInterval(function () {
+        const inputText = $(`#player${position}-typing-input`).val();
+        let currentTypingText = typingTextQueue[0] ? typingTextQueue[0] : "";
+        let keyStroke = 0;
+        let accuracyCount = 0;
+
+        for (let i = 0; i < inputText.length; i++) {
+          if (inputText[i] === currentTypingText[i]) {
+            keyStroke += countKeystrokes(inputText[i]);
+            accuracyCount++;
+          }
+        }
+
+        let accuracy = (accuracyCount / currentTypingText.length) * 100;
+        let elapsedTime = (new Date() - tajaStartTime) / 1000; // in seconds
+        let speed = (keyStroke / elapsedTime) * 60; // characters per minute
+
+        let showSpeed = Math.round(speed) ? Math.round(speed) : 0;
+        let showAccuracy = accuracy ? accuracy.toFixed(1) : 0;
+        $(`#player${position}-current-typing-speed`).text(showSpeed + "타");
+        $(`#player${position}-current-accuracy`).text(showAccuracy + "%");
+      }, 50);
     }
 
     function receivePlaceMessage(message) {
@@ -75,6 +167,14 @@
       const userLevel = message.split("::")[3];
       const userThumbnail = message.split("::")[4];
       const userTitle = message.split("::")[5];
+
+      if (spaceIndex < 2) {
+        $(`#player${spaceIndex}-screen`).text(`${userNickname}${spaceIndex === myPosition ? "(나)" : "(상대)"}`);
+      } else {
+        const spectatorList = $("#spectator-list");
+        const newSpectator = $("<p>").addClass("spectator").text(`${userNickname}(${userTitle})`);
+        spectatorList.append(newSpectator);
+      }
 
       $('#loading-text').text('다른 유저 기다리는 중...');
       $('#progress-bar-value').css('width', '67%');
@@ -95,8 +195,9 @@
     function recieveCountdownMessage(message) {
       const countdown = message.split("::")[1];
       $('.countdown-screen').text(countdown);
-      if(countdown === "0") {
+      if (countdown === "0") {
         $('.countdown-screen').text('START!');
+        $(`#player${myPosition}-typing-input`).focus();
         setTimeout(() => {
           $('.countdown-screen').hide();
         }, 1000);
@@ -128,14 +229,27 @@
     }
 
     function receiveTextMessage(message) {
-
+      const text = message.split("::")[1];
+      addText('0', text);
+      addText('1', text);
     }
 
     function receiveTajaMessage(message) {
+      const position = message.split("::")[1];
+      const playerText = message.split("::")[2];
+      const playerSpeed = message.split("::")[3];
+      const playerAccuracy = message.split("::")[4];
+
+      $(`#player${position}-current-typing-speed`).text(`${playerSpeed}타`);
+      $(`#player${position}-current-accuracy`).text(`${playerAccuracy}%`);
 
     }
 
     function receiveRemoveMessage(message) {
+
+    }
+
+    function receiveResultMessage(message) {
 
     }
 
@@ -195,8 +309,12 @@
             break;
           case "taja":
             receiveTajaMessage(event.data);
+            break;
           case "remove":
             receiveRemoveMessage(event.data);
+            break;
+          case "result":
+            receiveResultMessage(event.data);
             break;
           case "end":
             window.location.href = "/free-channel";
@@ -234,20 +352,6 @@
           sendChatMessage();
         }
       });
-
-      $('#player0-typing-input').on('input', function () {
-        const input = $(this).val();
-        ws.send(`text::${myNickname}::${input}`);
-      });
-
-      $('#player0-typing-input').on('keypress', function (e) {
-        if (e.key === "Enter") {
-          const input = $(this).val();
-          ws.send(`taja::${myNickname}::${input}`);
-          $(this).val("");
-        }
-      });
-
     });
   </script>
 </head>
@@ -276,14 +380,9 @@
       </div>
       <div class="game-main">
         <div class="countdown-screen"></div>
-        <div class="typing-text-container">
-          <p class="typing-text">이건 좀 짧은 문장1</p>
-          <p class="typing-text">이건 좀 짧은 문장2</p>
-          <p class="typing-text">이건 좀 짧은 문장3</p>
-          <p class="typing-text">이건 좀 짧은 문장4</p>
-        </div>
+        <div id="player0-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
-          <input id="player0-typing-input" class="typing-input" type="text" placeholder="입력하세요" />
+          <input id="player0-typing-input" class="typing-input" type="text" autocomplete="off" />
         </div>
         <div id="typing-log" class="typing-log">
         </div>
@@ -348,15 +447,9 @@
       </div>
       <div class="game-main">
         <div class="countdown-screen"></div>
-        <div class="typing-text-container">
-          <p class="typing-text">너구리는 너굴너굴 글자 수 제한은 어디까지인가? 끝을 알 수 없는 길과 같다</p>
-          <p class="typing-text">이건 좀 짧은 문장1</p>
-          <p class="typing-text">이건 좀 짧은 문장2</p>
-          <p class="typing-text">이건 좀 짧은 문장3</p>
-          <p class="typing-text">이건 좀 짧은 문장4</p>
-        </div>
+        <div id="player1-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
-          <input id="player1-typing-input" class="typing-input" type="text" placeholder="입력하세요" />
+          <input id="player1-typing-input" class="typing-input" type="text" autocomplete="off" />
         </div>
         <div id="typing-log" class="typing-log">
           <p class="typing-log-text">d</p>
@@ -437,7 +530,8 @@
     <div class="loading-box">
       <div class="progress loading-box" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
         <div id="progress-percentage" class="progress-text">0%</div>
-        <div id="progress-bar-value" class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 0%"></div>
+        <div id="progress-bar-value" class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+          style="width: 0%"></div>
       </div>
     </div>
     <p id="loading-text">연결중...</p>

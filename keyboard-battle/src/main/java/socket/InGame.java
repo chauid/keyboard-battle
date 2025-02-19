@@ -197,15 +197,16 @@ public class InGame {
 			System.out.println("전송 끊김: 정상");
 		}
 
-		if(isGameStarted.get(this.roomId) != null) { // 이미 게임이 시작되었을 경우 시간 정보를 전송하지 않음
-			return;
-		}
+		if (isGameStarted.get(this.roomId) != null) { // 이미 게임이 시작되었을 경우 시간 정보를 전송하지 않음
+			return; // 먼저 들어온 유저가 받고 나머지는 못 받는 문제
+		} // =============================================================이거 고쳐야 함
 
-		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+		ScheduledExecutorService timeScheduler = Executors.newScheduledThreadPool(1);
+		ScheduledExecutorService textScheduler = Executors.newScheduledThreadPool(1);
 
-		for (int i = 5; i >= 0; i--) {
+		for (int i = 5; i >= 0; i--) { // 카운트다운 5초
 			int count = i;
-			scheduler.schedule(() -> {
+			timeScheduler.schedule(() -> {
 				try {
 					sendToAllClientsInRoom("countdown::" + count);
 				} catch (IOException e) {
@@ -214,13 +215,13 @@ public class InGame {
 			}, 5 - i, TimeUnit.SECONDS);
 		}
 
-		scheduler.schedule(() -> {
-			scheduler.shutdown();
+		timeScheduler.schedule(() -> {
+			timeScheduler.shutdown();
 		}, 5, TimeUnit.SECONDS);
 
 		for (int i = 305; i >= 0; i--) { // 게임 시간 5분
 			int time = i;
-			scheduler.schedule(() -> {
+			timeScheduler.schedule(() -> {
 				try {
 					sendToAllClientsInRoom("time::" + time);
 				} catch (IOException e) {
@@ -229,15 +230,57 @@ public class InGame {
 			}, 305 - i, TimeUnit.SECONDS);
 		}
 
-		scheduler.schedule(() -> {
-			scheduler.shutdown();
+		timeScheduler.schedule(() -> { // 5분 후 게임 종료
+			timeScheduler.shutdown();
 			try {
 				sendToAllClientsInRoom("result");
 			} catch (IllegalStateException | IOException e) {
 				e.printStackTrace();
 			}
 		}, 305, TimeUnit.SECONDS);
+
+		textScheduler.scheduleAtFixedRate(() -> { // Level 1
+			try {
+				if (session.isOpen()) {
+					session.getBasicRemote().sendText("text::" + "레벨1 문장 테스트를 해보자");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, 6, 12, TimeUnit.SECONDS); // 카운트다운 종료 후 1초 여유: 5 + 1
 		
+		textScheduler.schedule(() -> {
+			textScheduler.shutdown();
+        }, 77, TimeUnit.SECONDS); // 6 + 71 = 77
+		
+		textScheduler.scheduleAtFixedRate(() -> { // Level 2
+			try {
+				if (session.isOpen()) {
+					session.getBasicRemote().sendText("text::" + "레벨2 문장 테스트를 해보자");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, 77, 10, TimeUnit.SECONDS);
+		
+		textScheduler.schedule(() -> {
+			textScheduler.shutdown();
+		}, 146, TimeUnit.SECONDS); // 77 + 69 = 146
+		
+		textScheduler.scheduleAtFixedRate(() -> { // Level 3
+			try {
+				if (session.isOpen()) {
+					session.getBasicRemote().sendText("text::" + "레벨3 문장 테스트를 해보자");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}, 146, 8, TimeUnit.SECONDS);
+		
+		textScheduler.schedule(() -> {
+			textScheduler.shutdown();
+		}, 209, TimeUnit.SECONDS); // 146 + 63 = 209
+
 		isGameStarted.computeIfAbsent(this.roomId, k -> true);
 	}
 
@@ -272,7 +315,13 @@ public class InGame {
 	}
 
 	private void inputTaja(String message, Session session) {
-
+		String position = message.split("::")[1];
+		String currentText = message.split("::")[2];
+		String currentTajaSpeed = message.split("::")[3];
+		String currentAccuracy = message.split("::")[4];
+		
+		Set<Session> roomSessions = rooms.get(this.roomId);
+		
 	}
 
 	private void completeTaja(String message, Session session) {

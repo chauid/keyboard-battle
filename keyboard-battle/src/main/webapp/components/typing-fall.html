@@ -120,11 +120,11 @@
         let speed = (keyStroke / elapsedTime) * 60; // characters per minute
 
         let showSpeed = Math.round(speed) ? Math.round(speed) : 0;
-        let showAccuracy = accuracy ? accuracy.toFixed(1) : 0;
+        let showAccuracy = accuracy ? accuracy : 0;
         $("#speedDisplay").text(
           "타자 속도: " + showSpeed + " characters per minute"
         );
-        $("#accuracyDisplay").text("정확도: " + showAccuracy + "%");
+        $("#accuracyDisplay").text("정확도: " + Math.trunc(showAccuracy) + "%");
       }, 50);
     });
 
