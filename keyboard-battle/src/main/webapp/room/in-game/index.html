@@ -21,11 +21,19 @@
     let refreshInterval = null;
 
     let tajaStartTime = null;
-    let totalTajaSpeed = 0;
+    let combo = 0;
+    let bomb = 2;
+    let attackGauge = 0;
+    let averageTajaSpeed = 0;
     let currentTajaSpeed = 0;
-    let totalAccuracy = 0;
+    let averageAccuracy = 0;
     let currentAccuracy = 0;
     let typingTextQueue = [];
+    let player0Score = 0;
+    let player1Score = 0;
+
+    const duration = 3000;
+    const frameRate = 60;
 
     function countKeystrokesSentence(sentence) {
       const sentenceString = sentence ? sentence : "";
@@ -106,9 +114,9 @@
       const position = message.split("::")[1];
       myPosition = position;
       if (position === "1") {
-        $('#player0-typing-input').prop('disabled', true);
+        $('#player1-typing-input').prop('disabled', false);
       } else if (position === "0") {
-        $('#player1-typing-input').prop('disabled', true);
+        $('#player0-typing-input').prop('disabled', false);
       }
 
       $(`#player${position}-typing-input`).on('input', function () {
@@ -116,24 +124,80 @@
           tajaStartTime = new Date();
         }
 
-        const input = $(this).val();
+        const input = $(`#player${position}-typing-input`).val();
         const sanitizedInput = input.replace(/::/g, '');
-        ws.send(`taja::${position}::${sanitizedInput}::${currentTajaSpeed}::${currentAccuracy}`);
+        if (sanitizedInput.length > 1) {
+          ws.send(`taja::${position}::${sanitizedInput}::${currentTajaSpeed}::${currentAccuracy}`);
+        }
 
         if (countKeystrokesSentence(input) > countKeystrokesSentence(typingTextQueue[0])) {
           removeText(position);
           $(`#player${position}-typing-input`).val('');
           tajaStartTime = null;
-          ws.send(`complete::${position}::${currentTajaSpeed}::${currentAccuracy}`);
+
+          if (currentAccuracy === 100) {
+            combo++;
+          } else {
+            combo = 0;
+          }
+          let currentNumber = position === "0" ? player0Score : player1Score;
+          let targetNumber = currentNumber + ((currentTajaSpeed * 1000) * (currentAccuracy / 100) * ((combo + 1) * 0.2));
+          console.log("현재값:", currentNumber, "목표값:", targetNumber);
+          console.log("증가값:", ((currentTajaSpeed * 1000) * (currentAccuracy / 100) * ((combo + 1) * 0.2)));
+          // ===================================           평균 타자속도, 정확도        ==================================================
+          let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
+          let interval = setInterval(function () {
+            currentNumber += step;
+            if (currentNumber >= targetNumber) {
+              currentNumber = targetNumber;
+              clearInterval(interval);
+            }
+            $(`#player${position}-score`).text(Math.floor(currentNumber));
+            if (position === "0") {
+              player0Score = currentNumber;
+            } else {
+              player1Score = currentNumber;
+            }
+          }, 1000 / frameRate);
+          if (currentTajaSpeed > 0) {
+            ws.send(`complete::${position}::${currentTajaSpeed}::${currentAccuracy}`);
+          }
         }
       });
 
       $(`#player${position}-typing-input`).on('keypress', function (e) {
+        const input = $(`#player${position}-typing-input`).val();
         if (e.key === "Enter" && countKeystrokesSentence(input) === countKeystrokesSentence(typingTextQueue[0])) {
           removeText(position);
           $(`#player${position}-typing-input`).val('');
           tajaStartTime = null;
-          ws.send(`complete::${position}::${currentTajaSpeed}::${currentAccuracy}`);
+
+          if (currentAccuracy === 100) {
+            combo++;
+          } else {
+            combo = 0;
+          }
+          let currentNumber = position === "0" ? player0Score : player1Score;
+          let targetNumber = currentNumber + ((currentTajaSpeed * 1000) * (currentAccuracy / 100) * ((combo + 1) * 0.2));
+          console.log("현재값:", currentNumber, "목표값:", targetNumber);
+          console.log("증가값:", ((currentTajaSpeed * 1000) * (currentAccuracy / 100) * ((combo + 1) * 0.2)));
+          let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
+          let interval = setInterval(function () {
+            currentNumber += step;
+            if (currentNumber >= targetNumber) {
+              currentNumber = targetNumber;
+              clearInterval(interval);
+            }
+            $(`#player${position}-score`).text(Math.floor(currentNumber));
+            if (position === "0") {
+              player0Score = currentNumber;
+            } else {
+              player1Score = currentNumber;
+            }
+          }, 1000 / frameRate);
+          if (currentTajaSpeed > 0) {
+            ws.send(`complete::${position}::${currentTajaSpeed}::${currentAccuracy}`);
+          }
         }
       });
 
@@ -155,9 +219,11 @@
         let speed = (keyStroke / elapsedTime) * 60; // characters per minute
 
         let showSpeed = Math.round(speed) ? Math.round(speed) : 0;
-        let showAccuracy = accuracy ? accuracy.toFixed(1) : 0;
+        let showAccuracy = accuracy ? Math.round(accuracy) : 0;
         $(`#player${position}-current-typing-speed`).text(showSpeed + "타");
         $(`#player${position}-current-accuracy`).text(showAccuracy + "%");
+        currentTajaSpeed = showSpeed;
+        currentAccuracy = showAccuracy;
       }, 50);
     }
 
@@ -169,12 +235,19 @@
       const userTitle = message.split("::")[5];
 
       if (spaceIndex < 2) {
-        $(`#player${spaceIndex}-screen`).text(`${userNickname}${spaceIndex === myPosition ? "(나)" : "(상대)"}`);
-      } else {
-        const spectatorList = $("#spectator-list");
-        const newSpectator = $("<p>").addClass("spectator").text(`${userNickname}(${userTitle})`);
-        spectatorList.append(newSpectator);
+        if (myPosition < 2) {
+          if (spaceIndex === myPosition) {
+            $(`#player${spaceIndex}-screen`).text(`${userNickname}(나)`);
+          } else {
+            $(`#player${spaceIndex}-screen`).text(`${userNickname}(상대)`);
+          }
+        } else {
+          $(`#player${spaceIndex}-screen`).text(userNickname);
+        }
       }
+      const spectatorList = $("#spectator-list");
+      const newSpectator = $("<p>").addClass("spectator").text(`${userNickname}(${userTitle})`);
+      spectatorList.append(newSpectator);
 
       $('#loading-text').text('다른 유저 기다리는 중...');
       $('#progress-bar-value').css('width', '67%');
@@ -240,9 +313,19 @@
       const playerSpeed = message.split("::")[3];
       const playerAccuracy = message.split("::")[4];
 
+      $(`#player${position}-typing-input`).val(playerText);
       $(`#player${position}-current-typing-speed`).text(`${playerSpeed}타`);
       $(`#player${position}-current-accuracy`).text(`${playerAccuracy}%`);
+    }
 
+    function receiveCompleteMessage(message) {
+      const position = message.split("::")[1];
+      const playerAverageSpeed = message.split("::")[2];
+      const playerAverageAccuracy = message.split("::")[3];
+      const playerAddScore = message.split("::")[4];
+
+      $(`#player${position}-score`).text(`${playerAverageSpeed}타`);
+      $(`#player${position}-current-accuracy`).text(`${playerAverageAccuracy}%`);
     }
 
     function receiveRemoveMessage(message) {
@@ -283,7 +366,7 @@
       };
 
       ws.onmessage = function (event) {
-        console.log(event.data);
+        // console.log(event.data);
         const msgType = event.data.split("::")[0];
         switch (msgType) {
           case "position":
@@ -382,7 +465,7 @@
         <div class="countdown-screen"></div>
         <div id="player0-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
-          <input id="player0-typing-input" class="typing-input" type="text" autocomplete="off" />
+          <input id="player0-typing-input" class="typing-input" type="text" autocomplete="off" disabled />
         </div>
         <div id="typing-log" class="typing-log">
         </div>
@@ -449,7 +532,7 @@
         <div class="countdown-screen"></div>
         <div id="player1-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
-          <input id="player1-typing-input" class="typing-input" type="text" autocomplete="off" />
+          <input id="player1-typing-input" class="typing-input" type="text" autocomplete="off" disabled />
         </div>
         <div id="typing-log" class="typing-log">
           <p class="typing-log-text">d</p>
@@ -512,7 +595,7 @@
     <div class="footer-screen">
       <div class="chat-box">
         <div id="chat-box-body" class="chat-box-body"></div>
-        <input id="chat-input" class="form-control" type="text" placeholder="메시지 입력" />
+        <input id="chat-input" class="form-control" type="text" placeholder="메시지 입력" autocomplete="off" />
       </div>
       <div class="spectators">
         <div class="spectators-container">

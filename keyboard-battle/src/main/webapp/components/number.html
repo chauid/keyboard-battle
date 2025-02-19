@@ -22,9 +22,9 @@
             $("#increase-btn").click(function() {
                 let $counter = $("#counter");
                 let currentNumber = parseInt($counter.text(), 10);
-                let targetNumber = currentNumber + 2501; // 증가 후 목표 값
-                let duration = 1000; // 애니메이션 지속 시간 (1초)
-                let frameRate = 30; // 초당 프레임 수
+                let targetNumber = currentNumber + 2500; // 증가 후 목표 값
+                let duration = 3000; // 애니메이션 지속 시간 (1초)
+                let frameRate = 60; // 초당 프레임 수
                 let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate)); // 한 프레임당 증가량
 
                 let interval = setInterval(function() {

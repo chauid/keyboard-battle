@@ -208,7 +208,7 @@ public class RoomChat {
 		throwable.printStackTrace();
 	}
 
-	private void sendToAllClientsInRoom(String message) throws IOException, IllegalStateException {
+	private void sendToAllClientsInRoom(String message) throws IOException {
 		Set<Session> roomSessions = rooms.get(this.roomId);
 		synchronized (rooms) {
 			for (Session s : roomSessions) {
@@ -219,7 +219,7 @@ public class RoomChat {
 		}
 	}
 
-	private void newUserRegist(String message, Session session) {
+	private void newUserRegist(String message, Session session) throws IOException {
 		RoomDAO roomDao = new RoomDAO();
 		RoomDTO room = roomDao.readRoomById(roomId);
 		if (room == null) {
@@ -374,7 +374,7 @@ public class RoomChat {
 		}
 	}
 
-	private void moveUser(String message, Session session) {
+	private void moveUser(String message, Session session) throws IOException {
 		int userId = Integer.parseInt(message.split("::")[1]);
 		int spaceIndex = Integer.parseInt(message.split("::")[2]);
 		UserRoomDAO userRoomDao = new UserRoomDAO();
@@ -434,7 +434,7 @@ public class RoomChat {
 		}
 	}
 
-	private void removeUser(String message, Session session) {
+	private void removeUser(String message, Session session) throws IOException {
 		int userId = Integer.parseInt(message.split("::")[1]);
 		int spaceIndex = Integer.parseInt(message.split("::")[2]);
 		RoomDAO roomDao = new RoomDAO();
@@ -448,7 +448,7 @@ public class RoomChat {
 		}
 	}
 
-	private void changeHost(String message, Session session) {
+	private void changeHost(String message, Session session) throws IOException {
 		int userId = Integer.parseInt(message.split("::")[1]);
 		int spaceIndex = Integer.parseInt(message.split("::")[2]);
 		RoomDAO roomDao = new RoomDAO();
@@ -465,7 +465,7 @@ public class RoomChat {
 		}
 	}
 
-	private void readyUser(String message, Session session) {
+	private void readyUser(String message, Session session) throws IOException {
 		int userId = Integer.parseInt(message.split("::")[1]);
 		UserRoomDAO userRoomDao = new UserRoomDAO();
 		UserRoomDTO userRoom = userRoomDao.readUserRoomByUserId(userId);
@@ -493,7 +493,7 @@ public class RoomChat {
 		}
 	}
 
-	private void startGame(String message, Session session) {
+	private void startGame(String message, Session session) throws IOException {
 		int userId = Integer.parseInt(message.split("::")[1]);
 		RoomDAO roomDao = new RoomDAO();
 		UserRoomDAO userRoomDao = new UserRoomDAO();
