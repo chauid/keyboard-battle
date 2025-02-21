@@ -29,9 +29,12 @@
     let averageAccuracy = 0;
     let currentAccuracy = 0;
     let completeCount = 0;
-    let typingTextQueue = []; // ==================== 다른 유저가 완료했는데 자신이 사라지는 버그 고치기 ====================
+    let typingTextQueue = [];
     let player0Score = 0;
     let player1Score = 0;
+    let player0GameOver = false;
+    let player1GameOver = false;
+
 
     const duration = 2000;
     const frameRate = 60;
@@ -84,14 +87,33 @@
       const newText = $("<p>").addClass("typing-text").text(text);
 
       container.prepend(newText);
-      if (Number(position) === Number(myPosition)) {
+      if (parseInt(position) === parseInt(myPosition)) {
         typingTextQueue.push(text);
       }
 
       if (typingTextQueue.length > 12) {
-        console.log('게임 종료');
+        if (myPosition === null) {
+          return;
+        }
+        if (myPosition === 0) {
+          if (player0GameOver) {
+            return;
+          }
+          $('#player0-typing-input').prop('disabled', true);
+          $('#player0-typing-input').val('게임 오버');
+          player0GameOver = true;
+          ws.send(`gameover::${position}`);
+        }
+        if (myPosition === 1) {
+          if (player1GameOver) {
+            return;
+          }
+          $('#player1-typing-input').prop('disabled', true);
+          $('#player1-typing-input').val('게임 오버');
+          player1GameOver = true;
+          ws.send(`gameover::${position}`);
+        }
       }
-      // console.log(typingTextQueue);
     }
 
     function removeText(position) {
@@ -104,8 +126,9 @@
 
         setTimeout(() => {
           lastText.remove();
-          typingTextQueue.shift();
-          // console.log(typingTextQueue);
+          if (parseInt(position) === parseInt(myPosition)) {
+            typingTextQueue.shift();
+          }
         }, 200);
       }
     }
@@ -120,7 +143,7 @@
       }
 
       $(`#player${position}-typing-input`).on('input', function () {
-        if(typingTextQueue.length === 0) {
+        if (typingTextQueue.length === 0) {
           $(`#player${position}-typing-input`).val('');
           return;
         }
@@ -137,6 +160,7 @@
         if (countKeystrokesSentence(input) > countKeystrokesSentence(typingTextQueue[0])) {
           if (currentTajaSpeed > 0 && input.length > 1) {
             removeText(position);
+            $(`#player${position}-typing-log`).text(input);
             $(`#player${position}-typing-input`).val('');
             tajaStartTime = null;
 
@@ -155,7 +179,7 @@
                 currentNumber = targetNumber;
                 clearInterval(interval);
               }
-              $(`#player${position}-score`).text(Math.floor(currentNumber));
+              $(`#player${position}-score`).text(Math.round(currentNumber));
             }, 1000 / frameRate);
             if (position === 0) {
               player0Score = Math.round(targetNumber);
@@ -165,7 +189,7 @@
             averageTajaSpeed = Math.round((averageTajaSpeed * completeCount + currentTajaSpeed) / (completeCount + 1));
             averageAccuracy = Math.round((averageAccuracy * completeCount + currentAccuracy) / (completeCount + 1));
             completeCount++;
-            attackGauge += averageTajaSpeed * (combo + 1) * 0.002;
+            attackGauge += averageTajaSpeed * (combo + 1) * 0.005;
             let attackGaugeShow = attackGauge.toFixed(2);
             if (attackGauge >= 100.0) {
               attackGauge = 100.0;
@@ -176,16 +200,29 @@
             $(`#player${position}-combo`).text(combo);
             $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
             $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
-            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}`);
+            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}::${combo}`);
           }
         }
       });
 
       $(`#player${position}-typing-input`).on('keypress', function (e) {
         const input = $(`#player${position}-typing-input`).val();
+
+        if (input.trim() === "/공격" && e.key === "Enter") {
+          const target = position === 0 ? 1 : 0;
+          let useGauge = Math.floor(attackGauge / 10);
+          attackGauge -= useGauge * 10;
+          let attackGaugeShow = attackGauge.toFixed(2);
+          $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
+          $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
+          ws.send(`attack::${target}::${useGauge}`);
+
+        }
+
         if (e.key === "Enter" && countKeystrokesSentence(input) === countKeystrokesSentence(typingTextQueue[0])) {
           if (currentTajaSpeed > 0 && input.length > 1) {
             removeText(position);
+            $(`#player${position}-typing-log`).text(input);
             $(`#player${position}-typing-input`).val('');
             tajaStartTime = null;
 
@@ -204,7 +241,7 @@
                 currentNumber = targetNumber;
                 clearInterval(interval);
               }
-              $(`#player${position}-score`).text(Math.floor(currentNumber));
+              $(`#player${position}-score`).text(Math.round(currentNumber));
             }, 1000 / frameRate);
             if (position === 0) {
               player0Score = Math.round(targetNumber);
@@ -225,7 +262,7 @@
             $(`#player${position}-combo`).text(combo);
             $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
             $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
-            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}`);
+            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}::${combo}`);
           }
         }
       });
@@ -253,7 +290,7 @@
         $(`#player${position}-current-accuracy`).text(showAccuracy + "%");
         currentTajaSpeed = showSpeed;
         currentAccuracy = showAccuracy;
-      }, 50);
+      }, 20);
     }
 
     function receivePlaceMessage(message) {
@@ -333,13 +370,17 @@
 
     function receiveLevelMessage(message) {
       const level = message.split("::")[1];
-      $('.game-level').text(`Level ${level}`);
+      $(`#player${myPosition}-game-level`).text(`Level ${level}`);
+      if (myPosition === null || player0GameOver) {
+        return;
+      }
+      ws.send(`level::${myPosition}::${level}`);
     }
 
     function receiveTextMessage(message) {
       const text = message.split("::")[1];
-      addText('0', text);
-      addText('1', text);
+      addText(0, text);
+      addText(1, text);
     }
 
     function receiveTajaMessage(message) {
@@ -362,7 +403,6 @@
       removeText(position);
       $(`#player${position}-typing-input`).val('');
 
-      console.log(position, playerAverageSpeed, playerAverageAccuracy, playerAddScore);
       let currentNumber = position === 0 ? player0Score : player1Score;
       let targetNumber = currentNumber + playerAddScore;
       let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
@@ -372,7 +412,7 @@
           currentNumber = targetNumber;
           clearInterval(interval);
         }
-        $(`#player${position}-score`).text(Math.floor(currentNumber));
+        $(`#player${position}-score`).text(Math.round(currentNumber));
       }, 1000 / frameRate);
       if (position === 0) {
         player0Score = Math.round(targetNumber);
@@ -383,13 +423,53 @@
       $(`#player${position}-average-accuracy`).text(`${playerAverageAccuracy}%`);
     }
 
-    function receiveRemoveMessage(message) {
+    function receiveBombMessage(message) {
 
     }
 
+    function receiveAddBombMessage(message) {
+
+    }
+
+    function receiveAttackMessage(message) {
+
+    }
+
+    function receiveGameoverMessage(message) {
+      const position = Number(message.split("::")[1]);
+      if (position === 0) {
+        $('#player0-typing-input').prop('disabled', true);
+        $('#player0-typing-input').val('게임 오버');
+        player0GameOver = true;
+      }
+      if (position === 1) {
+        $('#player1-typing-input').prop('disabled', true);
+        $('#player1-typing-input').val('게임 오버');
+        player1GameOver = true;
+      }
+    }
+
     function receiveResultMessage(message) {
-      $('#player0-typing-input').prop('disabled', true);
-      $('#player1-typing-input').prop('disabled', true);
+      $('.result-screen').show();
+      const winner = Number(message.split("::")[1]);
+      const position0 = Number(message.split("::")[2]);
+      const reachedLevel0 = Number(message.split("::")[3]);
+      const totalScore0 = Number(message.split("::")[4]);
+      const averageSpeed0 = Number(message.split("::")[5]);
+      const averageAccuracy0 = Number(message.split("::")[6]);
+      const maxCombo0 = Number(message.split("::")[7]);
+      const bomb0 = Number(message.split("::")[8]);
+      const gainedExp0 = Number(message.split("::")[9]);
+
+      const position1 = Number(message.split("::")[10]);
+      const reachedLevel1 = Number(message.split("::")[11]);
+      const totalScore1 = Number(message.split("::")[12]);
+      const averageSpeed1 = Number(message.split("::")[13]);
+      const averageAccuracy1 = Number(message.split("::")[14]);
+      const maxCombo1 = Number(message.split("::")[15]);
+      const bomb1 = Number(message.split("::")[16]);
+      const gainedExp1 = Number(message.split("::")[17]);
+      // ==================== ==================== ====================== 여기서 부터
     }
 
     $(document).ready(function () {
@@ -422,7 +502,6 @@
       };
 
       ws.onmessage = function (event) {
-        // console.log(event.data);
         const msgType = event.data.split("::")[0];
         switch (msgType) {
           case "position":
@@ -455,8 +534,17 @@
           case "complete":
             receiveCompleteMessage(event.data);
             break;
-          case "remove":
-            receiveRemoveMessage(event.data);
+          case "bomb":
+            receiveBombMessage(event.data);
+            break;
+          case "addbomb":
+            receiveAddBombMessage(event.data);
+            break;
+          case "attack":
+            receiveAttackMessage(event.data);
+            break;
+          case "gameover":
+            receiveGameoverMessage(event.data);
             break;
           case "result":
             receiveResultMessage(event.data);
@@ -465,7 +553,7 @@
             window.location.href = "/free-channel";
             break;
           default:
-            console.log("unknown message type");
+            console.error("unknown message type");
             break;
         }
       };
@@ -515,6 +603,28 @@
     background-color: rgba(100, 100, 100, 0.7);
     z-index: 1;
   }
+
+  .result-screen {
+    position: absolute;
+    width: inherit;
+    height: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    background-color: rgba(100, 100, 100, 0.7);
+    z-index: 1;
+  }
+
+  .result-screen-text {
+    width: 70%;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
 </style>
 
 <body>
@@ -524,17 +634,58 @@
         <p id="player0-screen"></p>
       </div>
       <div class="game-main">
-        <div class="countdown-screen"></div>
+        <!-- <div class="countdown-screen"></div> -->
+        <div class="result-screen" style="display: none;">
+          <div class="result-screen-text">
+            <p>레벨 도달</p>
+            <p style="display: flex;">
+              <span id="player0-result-level">5</span>
+              <span>&nbsp;×&nbsp;100000</span>
+            </p>
+          </div>
+          <div class="result-screen-text">
+            <p>평균 타자속도</p>
+            <p style="display: flex;">
+              <span id="player0-result-speed"></span>
+              <span>타</span>
+              <span>&nbsp;×&nbsp;1000</span>
+            </p>
+          </div>
+          <div class="result-screen-text">
+            <p>평균 정확도</p>
+            <p style="display: flex;">
+              <span id="player0-result-accuracy"></span>
+              <span>%</span>
+            </p>
+          </div>
+          <div class="result-screen-text">
+            <p>최대 Combo</p>
+            <p id="player0-result-combo">1</p>
+          </div>
+          <div class="result-screen-text">
+            <p>남은 Bomb 수</p>
+            <p id="player0-result-bomb"></p>
+          </div>
+          <div class="result-screen-text" style="margin-top: 15px;">
+            <p>점수</p>
+            <p style="display: flex;">
+              <span id="player0-result-score">0</span>
+              <span>점</span>
+            </p>
+          </div>
+        </div>
         <div id="player0-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
           <input id="player0-typing-input" class="typing-input" type="text" autocomplete="off" disabled />
         </div>
-        <div id="typing-log" class="typing-log">
+        <div class="typing-log">
+          <p id="player0-typing-log" class="typing-log-text"></p>
         </div>
       </div>
       <div class="game-sub">
         <div style="position: absolute;">
-          <p class="game-level" style="text-align: center; width: 220px; font-size: 1.5rem;">Level 1</p>
+          <p id="player0-game-level" class="game-level" style="text-align: center; width: 220px; font-size: 1.5rem;">
+            Level 1</p>
         </div>
         <div class="game-info">
           <div class="game-info-bottom">
@@ -594,18 +745,19 @@
         <p id="player1-screen"></p>
       </div>
       <div class="game-main">
-        <div class="countdown-screen"></div>
+        <!-- <div class="countdown-screen"></div> -->
         <div id="player1-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
           <input id="player1-typing-input" class="typing-input" type="text" autocomplete="off" disabled />
         </div>
-        <div id="typing-log" class="typing-log">
-          <p class="typing-log-text">d</p>
+        <div class="typing-log">
+          <p id="player1-typing-log" class="typing-log-text"></p>
         </div>
       </div>
       <div class="game-sub">
         <div style="position: absolute;">
-          <p class="game-level" style="text-align: center; width: 220px; font-size: 1.5rem;">Level 1</p>
+          <p id="player1-game-level" class="game-level" style="text-align: center; width: 220px; font-size: 1.5rem;">
+            Level 1</p>
         </div>
         <div class="game-info">
           <div class="game-info-bottom">
@@ -673,7 +825,7 @@
       </div>
     </div>
   </div>
-  <div class="loading-container">
+  <!-- <div class="loading-container">
     <div class="loading-box">
       <div class="progress loading-box" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
         <div id="progress-percentage" class="progress-text">0%</div>
@@ -682,7 +834,7 @@
       </div>
     </div>
     <p id="loading-text">연결중...</p>
-  </div>
+  </div> -->
 </body>
 
 </html>

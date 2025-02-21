@@ -1,81 +1,84 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-  <script>
-    $(document).ready(function () {
-      var koreanTexts = [
-        "저는 프로그래밍을 좋아합니다",
-        "한글 타이핑 속도를 측정해보세요",
-        "코파일럿은 정말 대단한 도구입니다",
-        "이 프로젝트는 한글 타이핑 속도를 측정하는데 도움이 됩니다",
-        "타자 연습을 통해 속도와 정확도를 향상시킬 수 있습니다",
-        "한글을 빠르게 타이핑하는 방법을 배우고 싶으신가요?",
-        "타자 속도 측정 프로그램을 만들어보세요",
-        "자신의 타자 속도를 측정하고 다른 사람들과 경쟁해보세요",
-      ];
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+	<script>
+		$(document).ready(function () {
+			var koreanTexts = [
+				"저는 프로그래밍을 좋아합니다",
+				"한글 타이핑 속도를 측정해보세요",
+				"코파일럿은 정말 대단한 도구입니다",
+				"이 프로젝트는 한글 타이핑 속도를 측정하는데 도움이 됩니다",
+				"타자 연습을 통해 속도와 정확도를 향상시킬 수 있습니다",
+				"한글을 빠르게 타이핑하는 방법을 배우고 싶으신가요?",
+				"타자 속도 측정 프로그램을 만들어보세요",
+				"자신의 타자 속도를 측정하고 다른 사람들과 경쟁해보세요",
+			];
 
-      var randomText = koreanTexts[Math.floor(Math.random() * koreanTexts.length)];
-      $("#textDisplay").text(randomText);
-    });
-    function countKeystrokes(hangulChar) {
-      const CHO = [ 'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ' ];
-      const JUNG = [ 'ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ' ];
-      const JONG = [ '', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ' ];
-  
-      const BASE_CODE = 0xAC00; // '가'의 유니코드
-      const charCode = hangulChar.charCodeAt(0);
-  
-      // 한글 범위가 아닐 경우
-      if (charCode < BASE_CODE || charCode > BASE_CODE + 11171) {
-          return 1;
-      }
-  
-      // 초성, 중성, 종성 인덱스 계산
-      let index = charCode - BASE_CODE;
-      let jong = index % 28;
-      let jung = ((index - jong) / 28) % 21;
-      let cho = ((index - jong) / 28 - jung) / 21;
-  
-      // 기본 타이핑 횟수는 초성 + 중성 (2타)
-      let keystrokes = 2;
-  
-      // 종성이 존재하면 추가 1타
-      if (jong > 0) {
-          keystrokes += 1;
-  
-          // 겹받침이면 추가 1타
-          if (['ㄳ', 'ㄵ', 'ㄶ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅄ'].includes(JONG[jong])) {
-              keystrokes += 1;
-          }
-      }
-  
-      return keystrokes;
-  }
+			var randomText = koreanTexts[Math.floor(Math.random() * koreanTexts.length)];
+			$("#textDisplay").text(randomText);
+		});
+		function countKeystrokes(hangulChar) {
+			const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+			const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+			const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 
-  // 문장 전체 타이핑 수 계산 함수
-  function countSentenceKeystrokes(sentence) {
-    let totalKeystrokes = 0;
+			const BASE_CODE = 0xAC00; // '가'의 유니코드
+			const charCode = hangulChar.charCodeAt(0);
 
-    for (let char of sentence) {
-        totalKeystrokes += countKeystrokes(char);
-    }
+			// 한글 범위가 아닐 경우
+			if (charCode < BASE_CODE || charCode > BASE_CODE + 11171) {
+				return 1;
+			}
 
-    return totalKeystrokes;
-  }
-  
-  // 테스트
-  console.log(countSentenceKeystrokes("곡가가뷁asdf")); // 2 (초성 + 중성)
-  console.log(countSentenceKeystrokes("각")); // 3 (초성 + 중성 + 종성)
-  console.log(countSentenceKeystrokes("깎")); // 4 (초성 + 중성 + 겹받침)
-  console.log(countSentenceKeystrokes("밟")); // 4 (초성 + 중성 + 겹받침)
-  
-  </script>
+			// 초성, 중성, 종성 인덱스 계산
+			let index = charCode - BASE_CODE;
+			let jong = index % 28;
+			let jung = ((index - jong) / 28) % 21;
+			let cho = ((index - jong) / 28 - jung) / 21;
+
+			// 기본 타이핑 횟수는 초성 + 중성 (2타)
+			let keystrokes = 2;
+
+			// 종성이 존재하면 추가 1타
+			if (jong > 0) {
+				keystrokes += 1;
+
+				// 겹받침이면 추가 1타
+				if (['ㄳ', 'ㄵ', 'ㄶ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅄ'].includes(JONG[jong])) {
+					keystrokes += 1;
+				}
+			}
+
+			return keystrokes;
+		}
+
+		// 문장 전체 타이핑 수 계산 함수
+		function countSentenceKeystrokes(sentence) {
+			let totalKeystrokes = 0;
+
+			for (let char of sentence) {
+				totalKeystrokes += countKeystrokes(char);
+			}
+
+			return totalKeystrokes;
+		}
+
+		// 테스트
+		console.log(countSentenceKeystrokes("곡가가뷁asdf")); // 2 (초성 + 중성)
+		console.log(countSentenceKeystrokes("각")); // 3 (초성 + 중성 + 종성)
+		console.log(countSentenceKeystrokes("깎")); // 4 (초성 + 중성 + 겹받침)
+		console.log(countSentenceKeystrokes("밟")); // 4 (초성 + 중성 + 겹받침)
+
+	</script>
 </head>
+
 <body>
-  
+
 </body>
+
 </html>
