@@ -176,13 +176,22 @@
 			const boxes = container.getElementsByClassName("box");
 			for (let index = 0; index < 5; index++) {
 				if (boxes.length > 0) {
-					const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
-					lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
-					lastBox.remove();
-					typingTextList.shift();
-					boxCount--;
-					$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
-					document.getElementById("count").textContent = `Box Count: ${boxCount}`;
+					setTimeout(() => {
+						const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
+						lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
+						lastBox.remove();
+						typingTextList.shift();
+						boxCount--;
+						$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
+						document.getElementById("count").textContent = `Box Count: ${boxCount}`;
+					}, 100 * index);
+					//const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
+					//lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
+					//lastBox.remove();
+					//typingTextList.shift();
+					//boxCount--;
+					//$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
+					//document.getElementById("count").textContent = `Box Count: ${boxCount}`;
 				}
 			}
 			console.log(typingTextList);

@@ -82,6 +82,25 @@
       return keystrokes;
     }
 
+    function updateScore(position, addScore) {
+      let currentNumber = position === 0 ? player0Score : player1Score;
+      let targetNumber = currentNumber + addScore;
+      let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
+      let interval = setInterval(function () {
+        currentNumber += step;
+        if (currentNumber >= targetNumber) {
+          currentNumber = targetNumber;
+          clearInterval(interval);
+        }
+        $(`#player${position}-score`).text(Math.round(currentNumber));
+      }, 1000 / frameRate);
+      if (position === 0) {
+        player0Score = Math.round(targetNumber);
+      } else {
+        player1Score = Math.round(targetNumber);
+      }
+    }
+
     function addText(position, text) {
       const container = $(`#player${position}-typing-text-container`);
       const newText = $("<p>").addClass("typing-text").text(text);
@@ -133,13 +152,39 @@
       }
     }
 
+    function remove5Text(position) {
+      const container = document.getElementById(`player${position}-typing-text-container`);
+      const texts = container.getElementsByClassName("typing-text");
+
+      for (let index = 0; index < 5; index++) {
+        if (texts.length > 0) {
+          setTimeout(() => {
+            const lastText = texts[texts.length - 1];
+            lastText.remove();
+            if (parseInt(position) === parseInt(myPosition)) {
+              typingTextQueue.shift();
+            }
+            console.log(typingTextQueue);
+          }, 100 * index);
+        }
+      }
+    }
+
     function receivePositionMessage(message) {
       const position = Number(message.split("::")[1]);
       myPosition = position;
       if (position === 1) {
         $('#player1-typing-input').prop('disabled', false);
+        $('#player0-combo').text('?');
+        $('#player0-bomb').text('?');
+        $('#player0-attack-gauge-text').text('?');
+        $('#player0-attack-gauge-bar').css('width', '0%');
       } else {
         $('#player0-typing-input').prop('disabled', false);
+        $('#player1-combo').text('?');
+        $('#player1-bomb').text('?');
+        $('#player1-attack-gauge-text').text('?');
+        $('#player1-attack-gauge-bar').css('width', '0%');
       }
 
       $(`#player${position}-typing-input`).on('input', function () {
@@ -169,29 +214,16 @@
             } else {
               combo = 0;
             }
-            let currentNumber = position === 0 ? player0Score : player1Score;
             let addScore = Math.round(currentTajaSpeed * currentAccuracy * currentAccuracy * (combo + 1) / 500);
-            let targetNumber = currentNumber + addScore;
-            let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
-            let interval = setInterval(function () {
-              currentNumber += step;
-              if (currentNumber >= targetNumber) {
-                currentNumber = targetNumber;
-                clearInterval(interval);
-              }
-              $(`#player${position}-score`).text(Math.round(currentNumber));
-            }, 1000 / frameRate);
-            if (position === 0) {
-              player0Score = Math.round(targetNumber);
-            } else {
-              player1Score = Math.round(targetNumber);
-            }
+            updateScore(position, addScore);
+
             averageTajaSpeed = Math.round((averageTajaSpeed * completeCount + currentTajaSpeed) / (completeCount + 1));
             averageAccuracy = Math.round((averageAccuracy * completeCount + currentAccuracy) / (completeCount + 1));
             completeCount++;
-            attackGauge += averageTajaSpeed * (combo + 1) * 0.005;
+            let addAttackGauge = averageTajaSpeed * (combo + 1) * 0.005;
+            attackGauge += addAttackGauge;
             let attackGaugeShow = attackGauge.toFixed(2);
-            if (attackGauge >= 100.0) {
+            if (attackGauge > 100.0) {
               attackGauge = 100.0;
               attackGaugeShow = 'MAX';
             }
@@ -200,7 +232,7 @@
             $(`#player${position}-combo`).text(combo);
             $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
             $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
-            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}::${combo}`);
+            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}::${combo}::${addAttackGauge}`);
           }
         }
       });
@@ -208,15 +240,44 @@
       $(`#player${position}-typing-input`).on('keypress', function (e) {
         const input = $(`#player${position}-typing-input`).val();
 
+        if (input.trim() === "/폭탄" && e.key === "Enter") {
+          if (bomb < 1) {
+            return;
+          }
+          bomb--;
+          let bombHtml = '';
+          for (let i = 0; i < bomb; i++) {
+            bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+          }
+
+          $(`#player${position}-typing-input`).val('');
+          tajaStartTime = null;
+
+          $(`#player${position}-bomb`).html(bombHtml);
+          remove5Text(position);
+          ws.send(`bomb::${position}`);
+          return;
+        }
+
         if (input.trim() === "/공격" && e.key === "Enter") {
           const target = position === 0 ? 1 : 0;
-          let useGauge = Math.floor(attackGauge / 10);
-          attackGauge -= useGauge * 10;
+          let attackCount = Math.floor(attackGauge / 10);
+          if (attackCount < 1) {
+            $(`#player${position}-typing-input`).val('');
+            tajaStartTime = null;
+            return;
+          }
+
+          attackGauge -= attackCount * 10;
           let attackGaugeShow = attackGauge.toFixed(2);
+
+          $(`#player${position}-typing-input`).val('');
+          tajaStartTime = null;
+
           $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
           $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
-          ws.send(`attack::${target}::${useGauge}`);
-
+          ws.send(`attack::${target}::${attackCount}`);
+          return;
         }
 
         if (e.key === "Enter" && countKeystrokesSentence(input) === countKeystrokesSentence(typingTextQueue[0])) {
@@ -231,29 +292,16 @@
             } else {
               combo = 0;
             }
-            let currentNumber = position === 0 ? player0Score : player1Score;
             let addScore = Math.round(currentTajaSpeed * currentAccuracy * currentAccuracy * (combo + 1) / 500);
-            let targetNumber = currentNumber + addScore;
-            let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
-            let interval = setInterval(function () {
-              currentNumber += step;
-              if (currentNumber >= targetNumber) {
-                currentNumber = targetNumber;
-                clearInterval(interval);
-              }
-              $(`#player${position}-score`).text(Math.round(currentNumber));
-            }, 1000 / frameRate);
-            if (position === 0) {
-              player0Score = Math.round(targetNumber);
-            } else {
-              player1Score = Math.round(targetNumber);
-            }
+            updateScore(position, addScore);
+
             averageTajaSpeed = Math.round((averageTajaSpeed * completeCount + currentTajaSpeed) / (completeCount + 1));
             averageAccuracy = Math.round((averageAccuracy * completeCount + currentAccuracy) / (completeCount + 1));
             completeCount++;
-            attackGauge += averageTajaSpeed * (combo + 1) * 0.002;
+            let addAttackGauge = averageTajaSpeed * (combo + 1) * 0.005;
+            attackGauge += addAttackGauge;
             let attackGaugeShow = attackGauge.toFixed(2);
-            if (attackGauge >= 100.0) {
+            if (attackGauge > 100.0) {
               attackGauge = 100.0;
               attackGaugeShow = 'MAX';
             }
@@ -262,7 +310,7 @@
             $(`#player${position}-combo`).text(combo);
             $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
             $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
-            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}::${combo}`);
+            ws.send(`complete::${position}::${averageTajaSpeed}::${averageAccuracy}::${addScore}::${combo}::${addAttackGauge}`);
           }
         }
       });
@@ -300,17 +348,22 @@
       const userThumbnail = message.split("::")[4];
       const userTitle = message.split("::")[5];
 
+      $(`#player${spaceIndex}-image`).attr('src', userThumbnail);
+      $(`#player${spaceIndex}-level`).text(userLevel);
+      $(`#player${spaceIndex}-nickname`).text(userNickname);
+      $(`#player${spaceIndex}-title`).text(userTitle);
       if (spaceIndex < 2) {
         if (myPosition !== null) {
           if (Number(spaceIndex) === Number(myPosition)) {
-            $(`#player${spaceIndex}-screen`).text(`${userNickname}(나)`);
+            $(`#player${spaceIndex}-screen`).text('(나)');
           } else {
-            $(`#player${spaceIndex}-screen`).text(`${userNickname}(상대)`);
+            $(`#player${spaceIndex}-screen`).text('(상대)');
           }
         } else {
           $(`#player${spaceIndex}-screen`).text(userNickname);
         }
       } else {
+        $("#spectator-list").empty();
         const spectatorList = $("#spectator-list");
         const newSpectator = $("<p>").addClass("spectator").text(`${userNickname}(${userTitle})`);
         spectatorList.append(newSpectator);
@@ -347,6 +400,9 @@
     function receiveTimeMessage(message) {
       const time = message.split("::")[1];
       if (time > 300) {
+        return;
+      }
+      if (player0GameOver && player1GameOver) {
         return;
       }
       const timeText = `${Math.floor(time / 60)}:${time % 60 < 10 ? "0" + time % 60 : time % 60}`;
@@ -399,6 +455,8 @@
       const playerAverageSpeed = message.split("::")[2];
       const playerAverageAccuracy = message.split("::")[3];
       const playerAddScore = Number(message.split("::")[4]);
+      const playerCombo = Number(message.split("::")[5]);
+      const playerAddAttackGauge = Number(message.split("::")[6]);
 
       removeText(position);
       $(`#player${position}-typing-input`).val('');
@@ -421,18 +479,49 @@
       }
       $(`#player${position}-average-typing-speed`).text(`${playerAverageSpeed}타`);
       $(`#player${position}-average-accuracy`).text(`${playerAverageAccuracy}%`);
+      if (myPosition === null) {
+        $(`#player${position}-combo`).text(playerCombo);
+        $(`#player${position}-attack-gauge-text`).text(playerAddAttackGauge.toFixed(2));
+        $(`#player${position}-attack-gauge-bar`).css('width', `${playerAddAttackGauge}%`);
+      }
     }
 
     function receiveBombMessage(message) {
-
+      const position = Number(message.split("::")[1]);
+      const bombCount = Number(message.split("::")[2]);
+      let bombHtml = '';
+      for (let i = 0; i < bombCount; i++) {
+        bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+      }
+      $(`#player${position}-bomb`).html(bombHtml);
+      remove5Text(position);
     }
 
     function receiveAddBombMessage(message) {
+      if (myPosition === null) {
+        return;
+      }
+      ws.send(`addbomb::${myPosition}`);
+    }
 
+    function receiveCheckBombMessage(message) {
+      const position = Number(message.split("::")[1]);
+      const bombCount = Number(message.split("::")[2]);
+      let bombHtml = '';
+      for (let i = 0; i < bombCount; i++) {
+        bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+      }
+      $(`#player${position}-bomb`).html(bombHtml);
     }
 
     function receiveAttackMessage(message) {
 
+    }
+
+    function receiveGameendMessage(message) {
+      if(myPosition !== null) {
+        ws.send(`gameover::${myPosition}`);
+      }
     }
 
     function receiveGameoverMessage(message) {
@@ -540,8 +629,14 @@
           case "addbomb":
             receiveAddBombMessage(event.data);
             break;
+          case "checkbomb":
+            receiveCheckBombMessage(event.data);
+            break;
           case "attack":
             receiveAttackMessage(event.data);
+            break;
+          case "gameend":
+            receiveGameendMessage(event.data);
             break;
           case "gameover":
             receiveGameoverMessage(event.data);
@@ -631,11 +726,19 @@
   <div class="container">
     <div class="player-screen">
       <div class="player-show">
-        <p id="player0-screen"></p>
+        <figure class="player-figure">
+          <img id="player0-image" class="player-image" src="/images/white-image.png" alt="" />
+        </figure>
+        <div class="player-box">
+          <span id="player0-level" class="badge text-bg-primary player-level"></span>
+          <span id="player0-nickname" class="player-nickname"></span>
+          <p id="player0-screen"></p>
+          <span id="player0-title" class="badge text-bg-warning player-title"></span>
+        </div>
       </div>
       <div class="game-main">
         <!-- <div class="countdown-screen"></div> -->
-        <div class="result-screen" style="display: none;">
+        <div id="player0-result" class="result-screen" style="display: none;">
           <div class="result-screen-text">
             <p>레벨 도달</p>
             <p style="display: flex;">
@@ -742,7 +845,17 @@
     </div>
     <div class="player-screen">
       <div class="player-show">
-        <p id="player1-screen"></p>
+        <div class="player-show">
+          <figure class="player-figure">
+            <img id="player1-image" class="player-image" src="/images/white-image.png" alt="" />
+          </figure>
+          <div class="player-box">
+            <span id="player1-level" class="badge text-bg-primary player-level"></span>
+            <span id="player1-nickname" class="player-nickname"></span>
+            <p id="player1-screen"></p>
+            <span id="player1-title" class="badge text-bg-warning player-title"></span>
+          </div>
+        </div>
       </div>
       <div class="game-main">
         <!-- <div class="countdown-screen"></div> -->

@@ -4,12 +4,14 @@ import java.sql.Timestamp;
 
 public class BattleLogDTO {
 	private int id;
+	private String roomTitle;
 	private int winUser;
-	private int defeatUser;
-	private int winUserScore;
-	private int defeatUserScore;
-	private int winUserGainedExp;
-	private int defeatUserGainedExp;
+	private int firstUser;
+	private int secondUser;
+	private int firstUserScore;
+	private int secondUserScore;
+	private int firstUserGainedExp;
+	private int secondUserGainedExp;
 	private Timestamp createdAt;
 
 	public int getId() {
@@ -20,6 +22,14 @@ public class BattleLogDTO {
 		this.id = id;
 	}
 
+	public String getRoomTitle() {
+		return roomTitle;
+	}
+
+	public void setRoomTitle(String roomTitle) {
+		this.roomTitle = roomTitle;
+	}
+
 	public int getWinUser() {
 		return winUser;
 	}
@@ -28,44 +38,52 @@ public class BattleLogDTO {
 		this.winUser = winUser;
 	}
 
-	public int getDefeatUser() {
-		return defeatUser;
+	public int getFirstUser() {
+		return firstUser;
 	}
 
-	public void setDefeatUser(int defeatUser) {
-		this.defeatUser = defeatUser;
+	public void setFirstUser(int firstUser) {
+		this.firstUser = firstUser;
 	}
 
-	public int getWinUserScore() {
-		return winUserScore;
+	public int getSecondUser() {
+		return secondUser;
 	}
 
-	public void setWinUserScore(int winUserScore) {
-		this.winUserScore = winUserScore;
+	public void setSecondUser(int secondUser) {
+		this.secondUser = secondUser;
 	}
 
-	public int getDefeatUserScore() {
-		return defeatUserScore;
+	public int getFirstUserScore() {
+		return firstUserScore;
 	}
 
-	public void setDefeatUserScore(int defeatUserScore) {
-		this.defeatUserScore = defeatUserScore;
+	public void setFirstUserScore(int firstUserScore) {
+		this.firstUserScore = firstUserScore;
 	}
 
-	public int getWinUserGainedExp() {
-		return winUserGainedExp;
+	public int getSecondUserScore() {
+		return secondUserScore;
 	}
 
-	public void setWinUserGainedExp(int winUserGainedExp) {
-		this.winUserGainedExp = winUserGainedExp;
+	public void setSecondUserScore(int secondUserScore) {
+		this.secondUserScore = secondUserScore;
 	}
 
-	public int getDefeatUserGainedExp() {
-		return defeatUserGainedExp;
+	public int getFirstUserGainedExp() {
+		return firstUserGainedExp;
 	}
 
-	public void setDefeatUserGainedExp(int defeatUserGainedExp) {
-		this.defeatUserGainedExp = defeatUserGainedExp;
+	public void setFirstUserGainedExp(int firstUserGainedExp) {
+		this.firstUserGainedExp = firstUserGainedExp;
+	}
+
+	public int getSecondUserGainedExp() {
+		return secondUserGainedExp;
+	}
+
+	public void setSecondUserGainedExp(int secondUserGainedExp) {
+		this.secondUserGainedExp = secondUserGainedExp;
 	}
 
 	public Timestamp getCreatedAt() {
@@ -75,5 +93,4 @@ public class BattleLogDTO {
 	public void setCreatedAt(Timestamp createdAt) {
 		this.createdAt = createdAt;
 	}
-
 }

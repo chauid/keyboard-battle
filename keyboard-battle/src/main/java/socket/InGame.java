@@ -10,12 +10,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import dao.BattleLogDAO;
 import dao.ChatLogDAO;
 import dao.RoomDAO;
 import dao.TitleDAO;
 import dao.TypingTestDAO;
 import dao.UserDAO;
 import dao.UserRoomDAO;
+import dto.BattleLogDTO;
 import dto.ChatLogDTO;
 import dto.RoomDTO;
 import dto.TitleDTO;
@@ -39,6 +41,7 @@ public class InGame {
 		int averageAccuracy;
 		int maxCombo;
 		int bomb = 2;
+		float attackGauge;
 		boolean isGameOver;
 	}
 
@@ -101,8 +104,11 @@ public class InGame {
 		case "bomb":
 			bombMessage(message, session);
 			break;
+		case "addbomb":
+			addBombMessage(message);
+			break;
 		case "attack":
-			sendToAllClientsInRoom(message);
+			attackMessage(message);
 			break;
 		case "gameover":
 			gameoverMessage(message, session);
@@ -302,37 +308,39 @@ public class InGame {
 			}, 75 + i * 8, TimeUnit.SECONDS); // 6 + 69 = 75, Level 1 종료 후 9초 대기
 		}
 
-		for (int i = 0; i < 9; i++) { // Level 3: 7초마다
+		for (int i = 0; i < 10; i++) { // Level 3: 6초마다
 			int count = i;
 			int randomIndex = (int) (Math.random() * typingTestSize);
 			textScheduler.schedule(() -> {
 				try {
 					if (count == 0) {
 						sendToAllClientsInRoom("level::3");
+						sendToAllClientsInRoom("addbomb");
 					}
 					sendToAllClientsInRoom("text::" + typingTestList.get(randomIndex).getSentence());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}, 138 + i * 7, TimeUnit.SECONDS); // 75 + 63 = 138, Level 2 종료 후 7초 대기
+			}, 138 + i * 6, TimeUnit.SECONDS); // 75 + 63 = 138, Level 2 종료 후 7초 대기
 		}
 
-		for (int i = 0; i < 10; i++) { // Level 4: 5초마다
+		for (int i = 0; i < 13; i++) { // Level 4: 4초마다
 			int count = i;
 			int randomIndex = (int) (Math.random() * typingTestSize);
 			textScheduler.schedule(() -> {
 				try {
 					if (count == 0) {
 						sendToAllClientsInRoom("level::4");
+						sendToAllClientsInRoom("addbomb");
 					}
 					sendToAllClientsInRoom("text::" + typingTestList.get(randomIndex).getSentence());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}, 207 + i * 5, TimeUnit.SECONDS); // 138 + 69 = 207, Level 3 종료 후 6초 대기
+			}, 203 + i * 4, TimeUnit.SECONDS); // 138 + 65 = 203, Level 3 종료 후 6초 대기
 		}
 
-		for (int i = 0; i < 11; i++) { // Level 5: 4초마다
+		for (int i = 0; i < 15; i++) { // Level 5: 3초마다. 마지막 3초 여유
 			int count = i;
 			int randomIndex = (int) (Math.random() * typingTestSize);
 			textScheduler.schedule(() -> {
@@ -344,13 +352,13 @@ public class InGame {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}, 261 + i * 4, TimeUnit.SECONDS); // 138 + 69 = 207, Level 4 종료 후 4초 대기
+			}, 258 + i * 3, TimeUnit.SECONDS); // 203 + 55 = 258, Level 4 종료 후 3초 대기
 		}
 
 		textScheduler.schedule(() -> {
 			textScheduler.shutdown();
 			try {
-				gameResult();
+				sendToAllClientsInRoom("gameend");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -378,13 +386,13 @@ public class InGame {
 
 		sendToOtherClientsInRoom(message, session);
 	}
-	
-	private void levelMessage(String message) throws IOException {
-        PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
-        int playerSpaceIndex = Integer.parseInt(message.split("::")[1]);
-        int level = Integer.parseInt(message.split("::")[2]);
 
-        playerInfoSpace[playerSpaceIndex].level = level;
+	private void levelMessage(String message) throws IOException {
+		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
+		int playerSpaceIndex = Integer.parseInt(message.split("::")[1]);
+		int level = Integer.parseInt(message.split("::")[2]);
+
+		playerInfoSpace[playerSpaceIndex].level = level;
 	}
 
 	private void completeMessage(String message, Session session) throws IOException {
@@ -394,11 +402,17 @@ public class InGame {
 		int averageAccuracy = Integer.parseInt(message.split("::")[3]);
 		int addScore = Integer.parseInt(message.split("::")[4]);
 		int combo = Integer.parseInt(message.split("::")[5]);
+		float addAttackGauge = Float.parseFloat(message.split("::")[6]);
 
 		playerInfoSpace[playerSpaceIndex].averageTajaSpeed = averageTajaSpeed;
 		playerInfoSpace[playerSpaceIndex].averageAccuracy = averageAccuracy;
 		playerInfoSpace[playerSpaceIndex].score += addScore;
 		playerInfoSpace[playerSpaceIndex].maxCombo = Math.max(playerInfoSpace[playerSpaceIndex].maxCombo, combo);
+		playerInfoSpace[playerSpaceIndex].attackGauge += addAttackGauge;
+
+		if (playerInfoSpace[playerSpaceIndex].attackGauge > 100) {
+			playerInfoSpace[playerSpaceIndex].attackGauge = 100;
+		}
 
 		sendToOtherClientsInRoom(message, session);
 	}
@@ -410,9 +424,37 @@ public class InGame {
 		playerInfoSpace[playerSpaceIndex].bomb--;
 		if (playerInfoSpace[playerSpaceIndex].bomb < 0) {
 			playerInfoSpace[playerSpaceIndex].bomb = 0;
+			return;
 		}
 
-		sendToOtherClientsInRoom(message, session);
+		sendToOtherClientsInRoom("bomb::" + playerSpaceIndex + "::" + playerInfoSpace[playerSpaceIndex].bomb, session);
+	}
+
+	private void addBombMessage(String message) throws IOException {
+		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
+		int playerSpaceIndex = Integer.parseInt(message.split("::")[1]);
+
+		playerInfoSpace[playerSpaceIndex].bomb++;
+
+		sendToAllClientsInRoom("checkbomb::" + playerSpaceIndex + "::" + playerInfoSpace[playerSpaceIndex].bomb);
+	}
+
+	private void attackMessage(String message) throws IOException {
+		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
+		int playerSpaceIndex = Integer.parseInt(message.split("::")[1]);
+		int attackCount = Integer.parseInt(message.split("::")[2]);
+
+		if (playerInfoSpace[playerSpaceIndex].attackGauge < 10) {
+			return;
+		}
+
+		playerInfoSpace[playerSpaceIndex].attackGauge -= attackCount * 10;
+		if (playerInfoSpace[playerSpaceIndex].attackGauge < 0) {
+			playerInfoSpace[playerSpaceIndex].attackGauge = 0;
+			return;
+		}
+
+		sendToAllClientsInRoom(message);
 	}
 
 	private void gameoverMessage(String message, Session session) throws IOException {
@@ -422,7 +464,7 @@ public class InGame {
 		playerInfoSpace[playerSpaceIndex].isGameOver = true;
 
 		sendToOtherClientsInRoom(message, session);
-		
+
 		if (playerInfoSpace[0].isGameOver && playerInfoSpace[1].isGameOver) {
 			gameResult();
 		}
@@ -432,21 +474,34 @@ public class InGame {
 		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
 		int playe0Score = playerInfoSpace[0].score;
 		int playe1Score = playerInfoSpace[1].score;
+		
+		BattleLogDAO battleLogDao = new BattleLogDAO();
+		RoomDAO roomDao = new RoomDAO();
+		
+		RoomDTO room = roomDao.readRoomById(this.roomId);
+		BattleLogDTO battleLog = new BattleLogDTO();
+		battleLog.setRoomTitle(room.getName());
+		// 점수 계산 로직 필요
+		
+		battleLogDao.createBattleLog(battleLog);
+		
 		String message = "result::0::";
 		message += playerInfoSpace[0].level + "::";
-		message += playerInfoSpace[0].score + "::";
+		message += playe0Score + "::";
 		message += playerInfoSpace[0].averageTajaSpeed + "::";
 		message += playerInfoSpace[0].averageAccuracy + "::";
 		message += playerInfoSpace[0].maxCombo + "::";
 		message += playerInfoSpace[0].bomb + "::";
 		message += "1::";
 		message += playerInfoSpace[1].level + "::";
-		message += playerInfoSpace[1].score + "::";
+		message += playe1Score + "::";
 		message += playerInfoSpace[1].averageTajaSpeed + "::";
 		message += playerInfoSpace[1].averageAccuracy + "::";
 		message += playerInfoSpace[1].maxCombo + "::";
 		message += playerInfoSpace[1].bomb;
 
 		sendToAllClientsInRoom(message);
+		
+		// delete socket
 	}
 }
