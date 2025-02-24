@@ -101,6 +101,26 @@
       }
     }
 
+    function updateScoreWithTotalScore(position, addScore) {
+      let currentNumber = position === 0 ? player0Score : player1Score;
+      let targetNumber = currentNumber + addScore;
+      let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
+      let interval = setInterval(function () {
+        currentNumber += step;
+        if (currentNumber >= targetNumber) {
+          currentNumber = targetNumber;
+          clearInterval(interval);
+        }
+        $(`#player${position}-score`).text(Math.round(currentNumber));
+        $(`#player${position}-result-score`).text(Math.round(currentNumber));
+      }, 1000 / frameRate);
+      if (position === 0) {
+        player0Score = Math.round(targetNumber);
+      } else {
+        player1Score = Math.round(targetNumber);
+      }
+    }
+
     function addText(position, text) {
       const container = $(`#player${position}-typing-text-container`);
       const newText = $("<p>").addClass("typing-text").text(text);
@@ -250,12 +270,20 @@
             bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
           }
 
+          let addScore = 0;
+          if (typingTextQueue.length >= 5) {
+            addScore = 10000; // 5 * 2000
+          } else {
+            addScore = typingTextQueue.length * 2000;
+          }
+          updateScore(position, addScore);
+
           $(`#player${position}-typing-input`).val('');
           tajaStartTime = null;
 
           $(`#player${position}-bomb`).html(bombHtml);
           remove5Text(position);
-          ws.send(`bomb::${position}`);
+          ws.send(`bomb::${position}::${addScore}`);
           return;
         }
 
@@ -263,8 +291,6 @@
           const target = position === 0 ? 1 : 0;
           let attackCount = Math.floor(attackGauge / 10);
           if (attackCount < 1) {
-            $(`#player${position}-typing-input`).val('');
-            tajaStartTime = null;
             return;
           }
 
@@ -276,7 +302,7 @@
 
           $(`#player${position}-attack-gauge-text`).text(attackGaugeShow);
           $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
-          ws.send(`attack::${target}::${attackCount}`);
+          ws.send(`attack::${target}::${attackCount}::${position}::${attackGaugeShow}`);
           return;
         }
 
@@ -354,7 +380,7 @@
       $(`#player${spaceIndex}-title`).text(userTitle);
       if (spaceIndex < 2) {
         if (myPosition !== null) {
-          if (Number(spaceIndex) === Number(myPosition)) {
+          if (parseInt(spaceIndex) === parseInt(myPosition)) {
             $(`#player${spaceIndex}-screen`).text('(나)');
           } else {
             $(`#player${spaceIndex}-screen`).text('(상대)');
@@ -426,11 +452,24 @@
 
     function receiveLevelMessage(message) {
       const level = message.split("::")[1];
-      $(`#player${myPosition}-game-level`).text(`Level ${level}`);
-      if (myPosition === null || player0GameOver) {
-        return;
+      if (!player0GameOver) {
+        $('#player0-game-level').text(`Level ${level}`);
       }
-      ws.send(`level::${myPosition}::${level}`);
+      if (!player1GameOver) {
+        $('#player1-game-level').text(`Level ${level}`);
+      }
+      if (myPosition === null) {
+        $('#player0-game-level').text(`Level ${level}`);
+        $('#player1-game-level').text(`Level ${level}`);
+      }
+      if (myPosition !== null) {
+        if (Number(myPosition) === 0 && !player0GameOver) {
+          ws.send(`level::${myPosition}::${level}`);
+        }
+        if (Number(myPosition) === 1 && !player1GameOver) {
+          ws.send(`level::${myPosition}::${level}`);
+        }
+      }
     }
 
     function receiveTextMessage(message) {
@@ -489,11 +528,19 @@
     function receiveBombMessage(message) {
       const position = Number(message.split("::")[1]);
       const bombCount = Number(message.split("::")[2]);
-      let bombHtml = '';
-      for (let i = 0; i < bombCount; i++) {
-        bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+      const addScore = Number(message.split("::")[3]);
+      const attackGauge = Number(message.split("::")[4]);
+
+      if (myPosition === null) {
+        let bombHtml = '';
+        for (let i = 0; i < bombCount; i++) {
+          bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+        }
+        $(`#player${position}-bomb`).html(bombHtml);
+        return;
       }
-      $(`#player${position}-bomb`).html(bombHtml);
+
+      updateScore(position, addScore);
       remove5Text(position);
     }
 
@@ -507,19 +554,44 @@
     function receiveCheckBombMessage(message) {
       const position = Number(message.split("::")[1]);
       const bombCount = Number(message.split("::")[2]);
-      let bombHtml = '';
-      for (let i = 0; i < bombCount; i++) {
-        bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+      if (myPosition === null) {
+        let bombHtml = '';
+        for (let i = 0; i < bombCount; i++) {
+          bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+        }
+        $(`#player${position}-bomb`).html(bombHtml);
+        return;
       }
-      $(`#player${position}-bomb`).html(bombHtml);
+      if (parseInt(position) == parseInt(myPosition)) {
+        bomb = bombCount;
+        let bombHtml = '';
+        for (let i = 0; i < bombCount; i++) {
+          bombHtml += '<i class="bi bi-star-fill" style="color: rgb(186, 214, 58);"></i>';
+        }
+        $(`#player${position}-bomb`).html(bombHtml);
+        return;
+      }
     }
 
     function receiveAttackMessage(message) {
+      const target = Number(message.split("::")[1]);
+      const attackCount = Number(message.split("::")[2]);
+      const position = Number(message.split("::")[3]);
+      const attackGauge = Number(message.split("::")[4]);
 
+      for (let i = 0; i < attackCount; i++) {
+        setTimeout(() => {
+          const text = message.split("::")[5 + i];
+          addText(target, text);
+        }, 100 * i);
+      }
+
+      $(`#player${position}-attack-gauge-text`).text(attackGauge.toFixed(2));
+      $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
     }
 
     function receiveGameendMessage(message) {
-      if(myPosition !== null) {
+      if (myPosition !== null) {
         ws.send(`gameover::${myPosition}`);
       }
     }
@@ -539,26 +611,65 @@
     }
 
     function receiveResultMessage(message) {
-      $('.result-screen').show();
       const winner = Number(message.split("::")[1]);
-      const position0 = Number(message.split("::")[2]);
-      const reachedLevel0 = Number(message.split("::")[3]);
-      const totalScore0 = Number(message.split("::")[4]);
-      const averageSpeed0 = Number(message.split("::")[5]);
-      const averageAccuracy0 = Number(message.split("::")[6]);
-      const maxCombo0 = Number(message.split("::")[7]);
-      const bomb0 = Number(message.split("::")[8]);
-      const gainedExp0 = Number(message.split("::")[9]);
+      const reachedLevel0 = Number(message.split("::")[2]);
+      const totalScore0 = Number(message.split("::")[3]);
+      const averageSpeed0 = Number(message.split("::")[4]);
+      const averageAccuracy0 = Number(message.split("::")[5]);
+      const maxCombo0 = Number(message.split("::")[6]);
+      const bomb0 = Number(message.split("::")[7]);
+      const gainedExp0 = Number(message.split("::")[8]);
 
-      const position1 = Number(message.split("::")[10]);
-      const reachedLevel1 = Number(message.split("::")[11]);
-      const totalScore1 = Number(message.split("::")[12]);
-      const averageSpeed1 = Number(message.split("::")[13]);
-      const averageAccuracy1 = Number(message.split("::")[14]);
-      const maxCombo1 = Number(message.split("::")[15]);
-      const bomb1 = Number(message.split("::")[16]);
-      const gainedExp1 = Number(message.split("::")[17]);
-      // ==================== ==================== ====================== 여기서 부터
+      const reachedLevel1 = Number(message.split("::")[9]);
+      const totalScore1 = Number(message.split("::")[10]);
+      const averageSpeed1 = Number(message.split("::")[11]);
+      const averageAccuracy1 = Number(message.split("::")[12]);
+      const maxCombo1 = Number(message.split("::")[13]);
+      const bomb1 = Number(message.split("::")[14]);
+      const gainedExp1 = Number(message.split("::")[15]);
+
+      $('#player0-result-level').text(reachedLevel0);
+      $('#player0-result-speed').text(averageSpeed0);
+      $('#player0-result-accuracy').text(averageAccuracy0);
+      $('#player0-result-combo').text(maxCombo0);
+      $('#player0-result-bomb').text(bomb0);
+      $('#player0-result-score').text(player0Score);
+      $('#player0-result-exp').text(gainedExp0);
+
+      $('#player1-result-level').text(reachedLevel1);
+      $('#player1-result-speed').text(averageSpeed1);
+      $('#player1-result-accuracy').text(averageAccuracy1);
+      $('#player1-result-combo').text(maxCombo1);
+      $('#player1-result-bomb').text(bomb1);
+      $('#player1-result-score').text(player1Score);
+      $('#player1-result-exp').text(gainedExp1);
+
+      $('.result-screen').show();
+
+      setTimeout(() => {
+        updateScoreWithTotalScore(0, Number(totalScore0 - player0Score));
+        updateScoreWithTotalScore(1, Number(totalScore1 - player1Score));
+      }, 1000);
+
+      setTimeout(() => {
+        if (winner === 0) {
+          $('#player0-win').text('승!');
+          $('#player1-win').text('패');
+        } else {
+          $('#player0-win').text('패');
+          $('#player1-win').text('승!');
+        }
+        $('#player0-win').css('opacity', '1');
+        $('#player1-win').css('opacity', '1');
+
+        const chatBody = $("#chat-box-body");
+        chatBody.append('<div class="message-box"><span class="chat-user">시스템</span><span class="chat-message">10초 후 대기실로 이동합니다.</span></div>');
+        chatBody.scrollTop(chatBody[0].scrollHeight);
+      }, 2000);
+
+      setTimeout(() => {
+        window.location.href = "/room?id=" + roomId;
+      }, 12000);
     }
 
     $(document).ready(function () {
@@ -569,7 +680,6 @@
       setInterval(() => {
         $('.player-screen').css('user-select', 'none');
       }, 1000);
-
 
       ws = new WebSocket("/in-game/" + roomId);
       ws.onopen = function () {
@@ -684,44 +794,6 @@
   </script>
 </head>
 
-<style>
-  .countdown-screen {
-    position: absolute;
-    width: inherit;
-    height: inherit;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 5rem;
-    font-weight: 700;
-    color: white;
-    background-color: rgba(100, 100, 100, 0.7);
-    z-index: 1;
-  }
-
-  .result-screen {
-    position: absolute;
-    width: inherit;
-    height: inherit;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
-    background-color: rgba(100, 100, 100, 0.7);
-    z-index: 1;
-  }
-
-  .result-screen-text {
-    width: 70%;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 5px;
-  }
-</style>
-
 <body>
   <div class="container">
     <div class="player-screen">
@@ -737,21 +809,18 @@
         </div>
       </div>
       <div class="game-main">
-        <!-- <div class="countdown-screen"></div> -->
-        <div id="player0-result" class="result-screen" style="display: none;">
-          <div class="result-screen-text">
+        <div class="countdown-screen"></div>
+        <div id="player0-result" class="result-screen" style="display: flex;">
+          <p id="player0-win" style="font-size: 2rem; margin-bottom: 20px; opacity: 0;">.</p>
+          <div class="result-screen-text" style="opacity: 1;">
             <p>레벨 도달</p>
-            <p style="display: flex;">
-              <span id="player0-result-level">5</span>
-              <span>&nbsp;×&nbsp;100000</span>
-            </p>
+            <p id="player0-result-level" style="display: flex;"></p>
           </div>
           <div class="result-screen-text">
             <p>평균 타자속도</p>
             <p style="display: flex;">
               <span id="player0-result-speed"></span>
               <span>타</span>
-              <span>&nbsp;×&nbsp;1000</span>
             </p>
           </div>
           <div class="result-screen-text">
@@ -769,11 +838,22 @@
             <p>남은 Bomb 수</p>
             <p id="player0-result-bomb"></p>
           </div>
-          <div class="result-screen-text" style="margin-top: 15px;">
+          <div class="result-screen-text" style="margin-top: 20px; font-size: 1.2rem;">
+            <p>보너스 점수: (도달 레벨 × 정확도²) + (최대 콤보 × 평균 타자속도 × 10) + (남은 폭탄 수 × 25000)</p>
+          </div>
+          <div class="result-screen-text">
             <p>점수</p>
             <p style="display: flex;">
               <span id="player0-result-score">0</span>
               <span>점</span>
+            </p>
+          </div>
+          <div class="result-screen-text" style="margin-top: 5px;">
+            <p>획득 경험치</p>
+            <p style="display: flex;">
+              <span>+</span>
+              <span id="player0-result-exp">0</span>
+              <span>xp</span>
             </p>
           </div>
         </div>
@@ -858,7 +938,55 @@
         </div>
       </div>
       <div class="game-main">
-        <!-- <div class="countdown-screen"></div> -->
+        <div class="countdown-screen"></div>
+        <div id="player1-result" class="result-screen" style="display: none;">
+          <div class="result-screen-text">
+            <p id="player1-win" style="font-size: 2rem; margin-bottom: 20px; opacity: 0;">.</p>
+            <p>레벨 도달</p>
+            <p id="player1-result-level" style="display: flex;"></p>
+          </div>
+          <div class="result-screen-text">
+            <p>평균 타자속도</p>
+            <p style="display: flex;">
+              <span id="player1-result-speed"></span>
+              <span>타</span>
+            </p>
+          </div>
+          <div class="result-screen-text">
+            <p>평균 정확도</p>
+            <p style="display: flex;">
+              <span id="player1-result-accuracy"></span>
+              <span>%</span>
+            </p>
+          </div>
+          <div class="result-screen-text">
+            <p>최대 Combo</p>
+            <p id="player1-result-combo"></p>
+          </div>
+          <div class="result-screen-text">
+            <p>남은 Bomb 수</p>
+            <p id="player1-result-bomb"></p>
+          </div>
+          <div class="result-screen-text" style="margin-top: 20px; font-size: 1.2rem;">
+            <p>보너스 점수: (도달 레벨 × 정확도²) + (최대 콤보 × 평균 타자속도 × 10) + (남은 폭탄 수 × 25000)</p>
+          </div>
+          <div class="result-screen-text">
+            <p>점수</p>
+            <p style="display: flex;">
+              <span id="player1-result-score">0</span>
+              <span>점</span>
+            </p>
+          </div>
+          <div class="result-screen-text" style="margin-top: 5px;">
+            <p>획득 경험치</p>
+            <p style="display: flex;">
+              <span>+</span>
+              <span id="player1-result-exp">0</span>
+              <span>xp</span>
+            </p>
+          </div>
+        </div>
+
         <div id="player1-typing-text-container" class="typing-text-container"></div>
         <div class="typing-box">
           <input id="player1-typing-input" class="typing-input" type="text" autocomplete="off" disabled />
@@ -938,7 +1066,7 @@
       </div>
     </div>
   </div>
-  <!-- <div class="loading-container">
+  <div class="loading-container">
     <div class="loading-box">
       <div class="progress loading-box" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
         <div id="progress-percentage" class="progress-text">0%</div>
@@ -947,7 +1075,7 @@
       </div>
     </div>
     <p id="loading-text">연결중...</p>
-  </div> -->
+  </div>
 </body>
 
 </html>

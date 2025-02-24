@@ -125,6 +125,42 @@ p {
 	user-select: none;
 }
 
+.countdown-screen {
+	position: absolute;
+	width: inherit;
+	height: inherit;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 5rem;
+	font-weight: 700;
+	color: white;
+	background-color: rgba(100, 100, 100, 0.7);
+	z-index: 1;
+}
+
+.result-screen {
+	position: absolute;
+	width: inherit;
+	height: inherit;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: white;
+	background-color: rgba(100, 100, 100, 0.7);
+	z-index: 1;
+}
+
+.result-screen-text {
+	width: 70%;
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 5px;
+}
+
 .typing-text-container {
 	height: 550px;
 	background-color: #eeeeee;

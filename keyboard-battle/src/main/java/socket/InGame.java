@@ -35,7 +35,7 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/in-game/{roomId}")
 public class InGame {
 	public class PlayerInfo {
-		int level;
+		int level = 1;
 		int score;
 		int averageTajaSpeed;
 		int averageAccuracy;
@@ -50,6 +50,7 @@ public class InGame {
 	private static final Map<String, boolean[]> isGameStarted = Collections.synchronizedMap(new ConcurrentHashMap<>());
 	private static final Map<String, PlayerInfo[]> playerInfo = Collections.synchronizedMap(new ConcurrentHashMap<>()); // size: 2
 	private String roomId;
+	private boolean isGameEnd = false;
 
 	@OnOpen
 	public void onOpen(@PathParam("roomId") String roomId, Session session) {
@@ -133,6 +134,11 @@ public class InGame {
 		synchronized (rooms) {
 			roomSessions.remove(session);
 		}
+		
+		rooms.remove(this.roomId);
+		spaces.remove(this.roomId);
+		isGameStarted.remove(this.roomId);
+		playerInfo.remove(this.roomId);
 	}
 
 	@OnError
@@ -404,6 +410,8 @@ public class InGame {
 		int combo = Integer.parseInt(message.split("::")[5]);
 		float addAttackGauge = Float.parseFloat(message.split("::")[6]);
 
+		System.out.println("addAttackGauge: " + addAttackGauge);
+
 		playerInfoSpace[playerSpaceIndex].averageTajaSpeed = averageTajaSpeed;
 		playerInfoSpace[playerSpaceIndex].averageAccuracy = averageAccuracy;
 		playerInfoSpace[playerSpaceIndex].score += addScore;
@@ -420,6 +428,7 @@ public class InGame {
 	private void bombMessage(String message, Session session) throws IOException {
 		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
 		int playerSpaceIndex = Integer.parseInt(message.split("::")[1]);
+		int addScore = Integer.parseInt(message.split("::")[2]);
 
 		playerInfoSpace[playerSpaceIndex].bomb--;
 		if (playerInfoSpace[playerSpaceIndex].bomb < 0) {
@@ -427,7 +436,7 @@ public class InGame {
 			return;
 		}
 
-		sendToOtherClientsInRoom("bomb::" + playerSpaceIndex + "::" + playerInfoSpace[playerSpaceIndex].bomb, session);
+		sendToOtherClientsInRoom("bomb::" + playerSpaceIndex + "::" + playerInfoSpace[playerSpaceIndex].bomb + "::" + addScore, session);
 	}
 
 	private void addBombMessage(String message) throws IOException {
@@ -441,20 +450,31 @@ public class InGame {
 
 	private void attackMessage(String message) throws IOException {
 		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
-		int playerSpaceIndex = Integer.parseInt(message.split("::")[1]);
 		int attackCount = Integer.parseInt(message.split("::")[2]);
+		int playerSpaceIndex = Integer.parseInt(message.split("::")[3]);
+		
 
-		if (playerInfoSpace[playerSpaceIndex].attackGauge < 10) {
+		System.out.println("현재 게이지: " + playerInfoSpace[playerSpaceIndex].attackGauge + ", 요청 게이지: " + attackCount * 10);
+
+		if (playerInfoSpace[playerSpaceIndex].attackGauge < attackCount * 10) {
 			return;
 		}
+
+		TypingTestDAO typingTestDao = new TypingTestDAO();
+		TypingTestDTO typingTest = null;
 
 		playerInfoSpace[playerSpaceIndex].attackGauge -= attackCount * 10;
 		if (playerInfoSpace[playerSpaceIndex].attackGauge < 0) {
 			playerInfoSpace[playerSpaceIndex].attackGauge = 0;
-			return;
 		}
 
-		sendToAllClientsInRoom(message);
+		String resMessage = message;
+		for (int i = 0; i < attackCount; i++) {
+			typingTest = typingTestDao.readRandomTypingTest();
+			resMessage += "::" + typingTest.getSentence();
+		}
+
+		sendToAllClientsInRoom(resMessage);
 	}
 
 	private void gameoverMessage(String message, Session session) throws IOException {
@@ -471,37 +491,95 @@ public class InGame {
 	}
 
 	private void gameResult() throws IOException {
+		if (this.isGameEnd) {
+			return;
+		}
+		this.isGameEnd = true;
+		
 		PlayerInfo[] playerInfoSpace = playerInfo.get(this.roomId); // size: 2
-		int playe0Score = playerInfoSpace[0].score;
-		int playe1Score = playerInfoSpace[1].score;
-		
+		int player0Score = playerInfoSpace[0].score;
+		int player1Score = playerInfoSpace[1].score;
+		int player0GainedExp = 10;
+		int player1GainedExp = 10;
+
 		BattleLogDAO battleLogDao = new BattleLogDAO();
+		UserRoomDAO userRoomDao = new UserRoomDAO();
 		RoomDAO roomDao = new RoomDAO();
-		
+		UserDAO  userDao = new UserDAO();
+
+		int[] roomSpace = spaces.get(this.roomId);
 		RoomDTO room = roomDao.readRoomById(this.roomId);
+		List<UserRoomDTO> userRoomList = userRoomDao.readUserRoomsByRoomId(this.roomId);
 		BattleLogDTO battleLog = new BattleLogDTO();
-		battleLog.setRoomTitle(room.getName());
-		// 점수 계산 로직 필요
+		UserDTO user0 = userDao.readUserById(roomSpace[0]);
+		UserDTO user1 = userDao.readUserById(roomSpace[1]);
+
+		player0GainedExp += playerInfoSpace[0].level;
+		player1GainedExp += playerInfoSpace[1].level;
+
+		player0Score += playerInfoSpace[0].level * playerInfoSpace[0].averageAccuracy * playerInfoSpace[0].averageAccuracy;
+		player0Score += playerInfoSpace[0].maxCombo * playerInfoSpace[0].averageTajaSpeed * 10;
+		player0Score += playerInfoSpace[0].bomb * 25000;
+		player1Score += playerInfoSpace[1].level * playerInfoSpace[1].averageAccuracy * playerInfoSpace[1].averageAccuracy;
+		player1Score += playerInfoSpace[1].maxCombo * playerInfoSpace[1].averageTajaSpeed * 10;
+		player1Score += playerInfoSpace[1].bomb * 25000;
+
+		int winner;
+		if (player0Score >= player1Score) {
+			winner = roomSpace[0];
+			battleLog.setWinUser(roomSpace[0]);
+			player0GainedExp += 10;
+			user0.setWinCount(user0.getWinCount() + 1);
+			user1.setDefeatCount(user1.getDefeatCount() + 1);
+		} else {
+			winner = roomSpace[1];
+			battleLog.setWinUser(roomSpace[1]);
+			player1GainedExp += 10;
+			user1.setWinCount(user1.getWinCount() + 1);
+			user0.setDefeatCount(user0.getDefeatCount() + 1);
+		}
 		
+		user0.setHighScore(Math.max(user0.getHighScore(), player0Score));
+		user1.setHighScore(Math.max(user1.getHighScore(), player1Score));
+
+		battleLog.setRoomTitle(room.getName());
+		battleLog.setFirstUser(roomSpace[0]);
+		battleLog.setSecondUser(roomSpace[1]);
+		battleLog.setFirstUserScore(player0Score);
+		battleLog.setSecondUserScore(player1Score);
+		battleLog.setFirstUserGainedExp(player0GainedExp);
+		battleLog.setSecondUserGainedExp(player1GainedExp);
+
 		battleLogDao.createBattleLog(battleLog);
 		
-		String message = "result::0::";
+		room.setIngame(false);
+		roomDao.updateRoom(room);
+		
+		for (UserRoomDTO ur : userRoomList) {
+			ur.setIngame(false);
+			userRoomDao.updateUserRoom(ur);
+		}
+		user0.setPlayCount(user0.getPlayCount() + 1);
+		user1.setPlayCount(user1.getPlayCount() + 1);
+		
+
+		String message = "result::";
+		message += winner + "::";
 		message += playerInfoSpace[0].level + "::";
-		message += playe0Score + "::";
+		message += player0Score + "::";
 		message += playerInfoSpace[0].averageTajaSpeed + "::";
 		message += playerInfoSpace[0].averageAccuracy + "::";
 		message += playerInfoSpace[0].maxCombo + "::";
 		message += playerInfoSpace[0].bomb + "::";
-		message += "1::";
+		message += player0GainedExp + "::";
 		message += playerInfoSpace[1].level + "::";
-		message += playe1Score + "::";
+		message += player1Score + "::";
 		message += playerInfoSpace[1].averageTajaSpeed + "::";
 		message += playerInfoSpace[1].averageAccuracy + "::";
 		message += playerInfoSpace[1].maxCombo + "::";
-		message += playerInfoSpace[1].bomb;
+		message += playerInfoSpace[1].bomb + "::";
+		message += player1GainedExp;
 
 		sendToAllClientsInRoom(message);
-		
-		// delete socket
 	}
 }
