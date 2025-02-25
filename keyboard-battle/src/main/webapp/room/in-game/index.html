@@ -83,7 +83,7 @@
     }
 
     function updateScore(position, addScore) {
-      let currentNumber = position === 0 ? player0Score : player1Score;
+      let currentNumber = position === 0 ? Number(player0Score) : Number(player1Score);
       let targetNumber = currentNumber + addScore;
       let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
       let interval = setInterval(function () {
@@ -102,7 +102,7 @@
     }
 
     function updateScoreWithTotalScore(position, addScore) {
-      let currentNumber = position === 0 ? player0Score : player1Score;
+      let currentNumber = position === 0 ? Number(player0Score) : Number(player1Score);
       let targetNumber = currentNumber + addScore;
       let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
       let interval = setInterval(function () {
@@ -111,8 +111,8 @@
           currentNumber = targetNumber;
           clearInterval(interval);
         }
-        $(`#player${position}-score`).text(Math.round(currentNumber));
-        $(`#player${position}-result-score`).text(Math.round(currentNumber));
+        $(`#player${position}-score`).text(Math.round(currentNumber).toString());
+        $(`#player${position}-result-score`).text(Math.round(currentNumber).toString());
       }, 1000 / frameRate);
       if (position === 0) {
         player0Score = Math.round(targetNumber);
@@ -354,7 +354,7 @@
           }
         }
 
-        let accuracy = (accuracyCount / currentTypingText.length) * 100;
+        let accuracy = (accuracyCount / inputText.length) * 100;
         let elapsedTime = (new Date() - tajaStartTime) / 1000; // in seconds
         let speed = (keyStroke / elapsedTime) * 60; // characters per minute
 
@@ -377,7 +377,7 @@
       $(`#player${spaceIndex}-image`).attr('src', userThumbnail);
       $(`#player${spaceIndex}-level`).text(userLevel);
       $(`#player${spaceIndex}-nickname`).text(userNickname);
-      $(`#player${spaceIndex}-title`).text(userTitle);
+      $(`#player${spaceIndex}-title`).text(userTitle !== 'null' ? userTitle : "칭호 없음");
       if (spaceIndex < 2) {
         if (myPosition !== null) {
           if (parseInt(spaceIndex) === parseInt(myPosition)) {
@@ -391,7 +391,7 @@
       } else {
         $("#spectator-list").empty();
         const spectatorList = $("#spectator-list");
-        const newSpectator = $("<p>").addClass("spectator").text(`${userNickname}(${userTitle})`);
+        const newSpectator = $("<p>").addClass("spectator").text(`${userNickname}(${userTitle !== 'null' ? userTitle : "칭호 없음"})`);
         spectatorList.append(newSpectator);
       }
 
@@ -495,12 +495,12 @@
       const playerAverageAccuracy = message.split("::")[3];
       const playerAddScore = Number(message.split("::")[4]);
       const playerCombo = Number(message.split("::")[5]);
-      const playerAddAttackGauge = Number(message.split("::")[6]);
+      const playerAttackGauge = Number(message.split("::")[6]);
 
       removeText(position);
       $(`#player${position}-typing-input`).val('');
 
-      let currentNumber = position === 0 ? player0Score : player1Score;
+      let currentNumber = position === 0 ? Number(player0Score) : Number(player1Score);
       let targetNumber = currentNumber + playerAddScore;
       let step = (targetNumber - currentNumber) / (duration / (1000 / frameRate));
       let interval = setInterval(function () {
@@ -520,8 +520,8 @@
       $(`#player${position}-average-accuracy`).text(`${playerAverageAccuracy}%`);
       if (myPosition === null) {
         $(`#player${position}-combo`).text(playerCombo);
-        $(`#player${position}-attack-gauge-text`).text(playerAddAttackGauge.toFixed(2));
-        $(`#player${position}-attack-gauge-bar`).css('width', `${playerAddAttackGauge}%`);
+        $(`#player${position}-attack-gauge-text`).text(playerAttackGauge.toFixed(2));
+        $(`#player${position}-attack-gauge-bar`).css('width', `${playerAttackGauge}%`);
       }
     }
 
@@ -529,7 +529,6 @@
       const position = Number(message.split("::")[1]);
       const bombCount = Number(message.split("::")[2]);
       const addScore = Number(message.split("::")[3]);
-      const attackGauge = Number(message.split("::")[4]);
 
       if (myPosition === null) {
         let bombHtml = '';
@@ -586,8 +585,10 @@
         }, 100 * i);
       }
 
-      $(`#player${position}-attack-gauge-text`).text(attackGauge.toFixed(2));
-      $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
+      if (myPosition === null) {
+        $(`#player${position}-attack-gauge-text`).text(attackGauge.toFixed(2));
+        $(`#player${position}-attack-gauge-bar`).css('width', `${attackGauge}%`);
+      }
     }
 
     function receiveGameendMessage(message) {
@@ -633,7 +634,7 @@
       $('#player0-result-accuracy').text(averageAccuracy0);
       $('#player0-result-combo').text(maxCombo0);
       $('#player0-result-bomb').text(bomb0);
-      $('#player0-result-score').text(player0Score);
+      $('#player0-result-score').text(player0Score.toString());
       $('#player0-result-exp').text(gainedExp0);
 
       $('#player1-result-level').text(reachedLevel1);
@@ -641,24 +642,24 @@
       $('#player1-result-accuracy').text(averageAccuracy1);
       $('#player1-result-combo').text(maxCombo1);
       $('#player1-result-bomb').text(bomb1);
-      $('#player1-result-score').text(player1Score);
+      $('#player1-result-score').text(player1Score.toString());
       $('#player1-result-exp').text(gainedExp1);
 
       $('.result-screen').show();
+      if (winner === 1) {
+          $('#player0-win').text('패');
+          $('#player1-win').text('승!');
+        } else {
+          $('#player0-win').text('승!');
+          $('#player1-win').text('패');
+        }
 
       setTimeout(() => {
-        updateScoreWithTotalScore(0, Number(totalScore0 - player0Score));
-        updateScoreWithTotalScore(1, Number(totalScore1 - player1Score));
+        updateScoreWithTotalScore(0, Number(Number(totalScore0) - Number(player0Score)));
+        updateScoreWithTotalScore(1, Number(Number(totalScore1) - Number(player1Score)));
       }, 1000);
 
       setTimeout(() => {
-        if (winner === 0) {
-          $('#player0-win').text('승!');
-          $('#player1-win').text('패');
-        } else {
-          $('#player0-win').text('패');
-          $('#player1-win').text('승!');
-        }
         $('#player0-win').css('opacity', '1');
         $('#player1-win').css('opacity', '1');
 
@@ -810,9 +811,9 @@
       </div>
       <div class="game-main">
         <div class="countdown-screen"></div>
-        <div id="player0-result" class="result-screen" style="display: flex;">
+        <div id="player0-result" class="result-screen" style="display: none;">
           <p id="player0-win" style="font-size: 2rem; margin-bottom: 20px; opacity: 0;">.</p>
-          <div class="result-screen-text" style="opacity: 1;">
+          <div class="result-screen-text">
             <p>레벨 도달</p>
             <p id="player0-result-level" style="display: flex;"></p>
           </div>
@@ -940,8 +941,8 @@
       <div class="game-main">
         <div class="countdown-screen"></div>
         <div id="player1-result" class="result-screen" style="display: none;">
+          <p id="player1-win" style="font-size: 2rem; margin-bottom: 20px; opacity: 0;">.</p>
           <div class="result-screen-text">
-            <p id="player1-win" style="font-size: 2rem; margin-bottom: 20px; opacity: 0;">.</p>
             <p>레벨 도달</p>
             <p id="player1-result-level" style="display: flex;"></p>
           </div>

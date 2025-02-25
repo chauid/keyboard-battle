@@ -421,8 +421,16 @@ public class InGame {
 		if (playerInfoSpace[playerSpaceIndex].attackGauge > 100) {
 			playerInfoSpace[playerSpaceIndex].attackGauge = 100;
 		}
+		
+		String resMessage = "complete::";
+		resMessage += playerSpaceIndex + "::";
+		resMessage += averageTajaSpeed + "::";
+		resMessage += averageAccuracy + "::";
+		resMessage += addScore + "::";
+		resMessage += combo + "::";
+		resMessage += playerInfoSpace[playerSpaceIndex].attackGauge;
 
-		sendToOtherClientsInRoom(message, session);
+		sendToOtherClientsInRoom(resMessage, session);
 	}
 
 	private void bombMessage(String message, Session session) throws IOException {
@@ -526,13 +534,13 @@ public class InGame {
 
 		int winner;
 		if (player0Score >= player1Score) {
-			winner = roomSpace[0];
+			winner = 0;
 			battleLog.setWinUser(roomSpace[0]);
 			player0GainedExp += 10;
 			user0.setWinCount(user0.getWinCount() + 1);
 			user1.setDefeatCount(user1.getDefeatCount() + 1);
 		} else {
-			winner = roomSpace[1];
+			winner = 1;
 			battleLog.setWinUser(roomSpace[1]);
 			player1GainedExp += 10;
 			user1.setWinCount(user1.getWinCount() + 1);
