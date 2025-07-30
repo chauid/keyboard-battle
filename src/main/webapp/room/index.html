@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>게임 대기실</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+	<link rel="stylesheet"
+		href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+	<link rel="stylesheet" href="/styles/room.css" />
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+	<script>
+		let ws = null;
+		let roomId = new URLSearchParams(window.location.search).get("id");
+		let myNickname = "";
+		let myUserId = "";
+		let currentReadyState = false;
+		let refreshInterval = null;
+
+		function receiveClientMessage(message) {
+			const clientCount = message.split("::")[1];
+			const maxClientCount = message.split("::")[2];
+			$("#room-header-subtitle").text(`[${clientCount}/${maxClientCount}]`);
+			$('#loading-text').text('방 정보 불러오는 중...');
+			$('#progress-bar-value').css('width', '50%');
+			$('#progress-percentage').text('50%');
+
+		}
+
+		function receiveTitleMessage(message) {
+			const title = message.split("::")[1];
+			$("#room-header-title").text(title);
+			$('#loading-text').text('유저 정보 불러오는 중...');
+			$('#progress-bar-value').css('width', '75%');
+			$('#progress-percentage').text('75%');
+		}
+
+		function receiveChatMessage(message) {
+			const user = message.split("::")[1];
+			const chatInput = message.split("::")[2];
+			const chatBody = $("#chat-box-body");
+			chatBody.append(`
+        <div class="message-box">
+          <span class="chat-user">${user}</span>
+          <span class="chat-message">${chatInput}</span>
+        </div>
+      `);
+			chatBody.scrollTop(chatBody[0].scrollHeight);
+		}
+
+		function recieveMoveMessage(message) {
+			const spaceIndex = message.split("::")[1];
+			const userNickname = message.split("::")[2];
+			const userLevel = message.split("::")[3];
+			const userExp = message.split("::")[4];
+			const userImage = message.split("::")[5];
+			const userTitle = message.split("::")[6];
+			const userHost = message.split("::")[7];
+			const userReady = message.split("::")[8];
+
+			const imageElement = $(`#space${spaceIndex}-image`)[0];
+			const levelElement = $(`#space${spaceIndex}-level`)[0];
+			const nicknameElement = $(`#space${spaceIndex}-nickname`)[0];
+			const titleElement = $(`#space${spaceIndex}-title`)[0];
+			const hostElement = $(`#space${spaceIndex}-host`)[0];
+			const expElement0 = $('#space0-exp')[0];
+			const expElement1 = $('#space1-exp')[0];
+
+			$(imageElement).attr("src", userImage);
+			$(levelElement).text(userLevel);
+			$(nicknameElement).text(userNickname);
+			$(titleElement).text(userTitle !== 'null' ? userTitle : "칭호 없음");
+			if (userHost == 'true') {
+				$(hostElement).html(`
+          <figure class="host-figure">
+            <img class="host-figure-image" src="/images/crown.png" alt="" />
+          </figure>
+        `);
+			} else {
+				$(hostElement).text("");
+			}
+
+			if (userReady == 'on') {
+				$(`#space${spaceIndex}`).css({
+					'background-color': '#acf1ae',
+					'box-shadow': '0 0 10px rgba(0, 0, 0, 0.4)'
+				});
+			} else {
+				$(`#space${spaceIndex}`).css({
+					'background-color': '#d1e4ee',
+					'box-shadow': ''
+				});
+			}
+
+			if (spaceIndex === '0') { // player0
+				$(expElement0).html(`<span>exp ${userExp} / ${userLevel * 10}</span>`);
+			}
+			if (spaceIndex === '1') { // player1
+				$(expElement1).html(`<span>exp ${userExp} / ${userLevel * 10}</span>`);
+			}
+
+			$('.player-move').prop('disabled', false);
+			$('.spectator-move').prop('disabled', false);
+		}
+
+		function receiveRemoveMessage(message) {
+			const spaceIndex = message.split("::")[1];
+			const imageElement = $(`#space${spaceIndex}-image`);
+			const levelElement = $(`#space${spaceIndex}-level`);
+			const nicknameElement = $(`#space${spaceIndex}-nickname`);
+			const titleElement = $(`#space${spaceIndex}-title`);
+			const hostElement = $(`#space${spaceIndex}-host`);
+			const expElement0 = $('#space0-exp');
+			const expElement1 = $('#space1-exp');
+			const spaceElement = $(`#space${spaceIndex}`);
+
+			spaceElement.css({
+				'background-color': '#d1e4ee',
+				'box-shadow': ''
+			});
+			imageElement.attr("src", "/images/white-image.png");
+			levelElement.text("");
+			nicknameElement.text("");
+			titleElement.text("");
+			hostElement.text("");
+
+			if (spaceIndex === '0') { // player0
+				expElement0.html('');
+			}
+			if (spaceIndex === '1') { // player1
+				expElement1.html('');
+			}
+		}
+
+		function receiveHostMessage(message) {
+			const spaceIndex = message.split("::")[1];
+			const hostId = message.split("::")[2];
+			if (hostId === myUserId) {
+
+				const spaceElement = $(`#space${spaceIndex}`);
+				spaceElement.css({
+					'background-color': '#d1e4ee',
+					'box-shadow': ''
+				});
+
+				const readyButton = $('#ready-button');
+				readyButton.hide();
+				const startButton = $('#start-button');
+				startButton.show();
+
+				if (currentReadyState) {
+					ws.send("ready::" + myUserId);
+					currentReadyState = false;
+				}
+			}
+			for (let i = 0; i < 10; i++) {
+				const hostElement = $(`#space${i}-host`);
+				if (i == spaceIndex) {
+					hostElement.html(`
+            <figure class="host-figure">
+              <img class="host-figure-image" src="/images/crown.png" alt="" />
+            </figure>
+          `);
+				} else {
+					hostElement.text("");
+				}
+			}
+			$('#loading-text').text('로딩 완료!');
+			$('#progress-bar-value').css('width', '100%');
+			$('#progress-percentage').text('100%');
+			clearTimeout(refreshInterval);
+			setTimeout(() => {
+				$('.container').css('filter', '');
+				$('.loading-container').hide();
+			}, 500);
+		}
+
+		function receiveReadyMessage(message) {
+			const spaceIndex = message.split("::")[1];
+			const readyState = message.split("::")[2];
+			const spaceElement = $(`#space${spaceIndex}`);
+			const readyButton = $('#ready-button');
+
+			if (readyState === 'on') {
+				spaceElement.css({
+					'background-color': '#acf1ae',
+					'box-shadow': '0 0 10px rgba(0, 0, 0, 0.4)'
+				});
+			} else {
+				spaceElement.css({
+					'background-color': '#d1e4ee',
+					'box-shadow': ''
+				});
+			}
+		}
+
+		function receiveStartMessage(message) {
+			const status = message.split("::")[1];
+			const reason = message.split("::")[2];
+
+			if (status === 'true') {
+				window.location.href = "/room/in-game?id=" + roomId;
+			} else {
+				if (reason === 'auth') {
+					alert('방장도 아닌 놈이 무슨 게임 시작?');
+					$('#start-button').html('게임 시작');
+				} else if (reason === 'ready') {
+					alert('준비가 완료되지 않은 플레이어가 있습니다.');
+					$('#start-button').html('게임 시작');
+				} else if (reason === 'two') {
+					alert('플레이어가 2명이어야 게임을 시작할 수 있습니다.');
+					$('#start-button').html('게임 시작');
+				} else {
+					alert('알 수 없는 이유로 게임 시작에 실패했습니다.');
+					$('#start-button').html('게임 시작');
+				}
+			}
+		}
+
+		$(document).ready(function () {
+			if (roomId === undefined || roomId === null || roomId === "") {
+				window.location.href = "/free-channel";
+			}
+
+			ws = new WebSocket("/room-chat/" + roomId);
+			ws.onopen = function () {
+				myNickname = document.cookie.split('; ').find(row => row.startsWith('nickname=')).split('=')[1];
+				myUserId = document.cookie.split('; ').find(row => row.startsWith('userid=')).split('=')[1];
+
+				ws.send("new::" + myUserId);
+				$('.container').css('filter', 'blur(5px)');
+				$('#loading-text').text('유저 목록 불러오는 중...');
+				$('#progress-bar-value').css('width', '25%');
+				$('#progress-percentage').text('25%');
+
+				setTimeout(() => {
+					$('#loading-text').text('로딩이 너무 오래 걸리면, 새로고침을 시도해주세요. 10초 후 새로고침됩니다.');
+				}, 10000);
+				refreshInterval = setTimeout(() => {
+					window.location.reload();
+				}, 20000);
+			};
+
+			ws.onmessage = function (event) {
+				// console.log(event.data);
+				const msgType = event.data.split("::")[0];
+				switch (msgType) {
+					case "client":
+						receiveClientMessage(event.data);
+						break;
+					case "title":
+						receiveTitleMessage(event.data);
+						break;
+					case "chat":
+						receiveChatMessage(event.data);
+						break;
+					case "move":
+						recieveMoveMessage(event.data);
+						break;
+					case "remove":
+						receiveRemoveMessage(event.data);
+						break;
+					case "host":
+						receiveHostMessage(event.data);
+						break;
+					case "ready":
+						receiveReadyMessage(event.data);
+						break;
+					case "start":
+						receiveStartMessage(event.data);
+						break;
+					case "end":
+						window.location.href = "/free-channel";
+						break;
+					default:
+						console.log("unknown message type");
+						break;
+				}
+			};
+
+			ws.onclose = function () {
+				window.location.reload();
+			};
+			ws.onerror = function () {
+				// console.log('error');
+			};
+
+			function sendChatMessage() {
+				const chatInput = $('#chat-input').val().trim();
+				if (chatInput === '' || chatInput === null) {
+					return;
+				}
+				const chatMessage = `chat::${myNickname}::${chatInput}`;
+				const chatBody = $("#chat-box-body");
+				chatBody.append(`<div class="message-box"><span class="chat-user">${myNickname}</span><span class="chat-message">${chatInput}</span></div>`);
+				chatBody.scrollTop(chatBody[0].scrollHeight);
+				$("#chat-input").val("");
+				ws.send(chatMessage);
+			}
+
+			$("#chat-input").on("keypress", function (e) {
+				if (e.key === "Enter") {
+					sendChatMessage();
+				}
+			});
+
+			$("#ready-button").click(function () {
+				currentReadyState = !currentReadyState;
+				const readyButton = $('#ready-button');
+				if (currentReadyState) {
+					readyButton.text('준비 완료');
+					readyButton.css({'background-color': '#36d96e'});
+				} else {
+					readyButton.text('준비 하기');
+					readyButton.css({'background-color': '#47e7e5'});
+				}
+				ws.send("ready::" + myUserId);
+			});
+
+			$("#start-button").click(function () {
+				$('#start-button').html('<div class="spinner-border text-secondary" role="status"></div>');
+				ws.send("start::" + myUserId);
+			});
+
+			$("#exit-button").on("click", function () {
+				window.location.href = "/free-channel";
+			});
+
+		});
+
+		function handleMoveButton(spaceIndex) {
+			if (currentReadyState) {
+				alert('준비 완료 상태에서 자리를 이동할 수 없습니다.');
+				return;
+			}
+			$('.player-move').prop('disabled', true);
+			$('.spectator-move').prop('disabled', true);
+			ws.send("move::" + myUserId + "::" + spaceIndex);
+		}
+	</script>
+</head>
+
+<body>
+	<div class="container">
+		<header class="room-header">
+			<div class="room-header-box">
+				<h3 id="room-header-title" class="room-header-title">방 제목</h3>
+				<p id="room-header-subtitle" class="room-header-subtitle">[0/2]</p>
+			</div>
+			<button id="exit-button" class="btn btn-danger exit-button">
+				나가기
+			</button>
+		</header>
+		<main class="main">
+			<div class="players">
+				<div class="player">
+					<div class="player-header">
+						<div class="player-header-box">
+							<span>플레이어 1</span>
+							<span id="space0-host">
+							</span>
+						</div>
+						<button id="space0-move" class="btn btn-secondary player-move" onclick="handleMoveButton(0)">
+							이동
+						</button>
+					</div>
+					<div id="space0" class="player-info">
+						<figure class="player-figure">
+							<img id="space0-image" class="player-image" src="/images/white-image.png" alt="" />
+						</figure>
+						<div class="player-box">
+							<div class="player-box-info">
+								<span id="space0-level" class="badge text-bg-primary player-level"></span>
+								<span id="space0-nickname" class="player-nickname"></span>
+								<span id="space0-title" class="badge text-bg-warning player-title"></span>
+							</div>
+							<div id="space0-exp" class="player-exp-box">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="player">
+					<div class="player-header">
+						<div class="player-header-box">
+							<span>플레이어 2</span>
+							<span id="space1-host">
+							</span>
+						</div>
+						<button id="space1-move" class="btn btn-secondary player-move" onclick="handleMoveButton(1)">
+							이동
+						</button>
+					</div>
+					<div id="space1" class="player-info">
+						<figure class="player-figure">
+							<img id="space1-image" class="player-image" src="/images/white-image.png" alt="" />
+						</figure>
+						<div class="player-box">
+							<div class="player-box-info">
+								<span id="space1-level" class="badge text-bg-primary player-level"></span>
+								<span id="space1-nickname" class="player-nickname"></span>
+								<span id="space1-title" class="badge text-bg-warning player-title"></span>
+							</div>
+							<div id="space1-exp" class="player-exp-box">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="spectators">
+				<p class="spectators-header">관전자 목록</p>
+				<div class="spectators-list">
+					<div id="space2" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space2-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space2-host"></span>
+								<span id="space2-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space2-nickname" class="spectator-nickname"></span>
+								<span id="space2-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space2-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(2)">
+							이동
+						</button>
+					</div>
+					<div id="space3" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space3-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space3-host"></span>
+								<span id="space3-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space3-nickname" class="spectator-nickname"></span>
+								<span id="space3-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space3-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(3)">
+							이동
+						</button>
+					</div>
+					<div id="space4" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space4-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space4-host"></span>
+								<span id="space4-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space4-nickname" class="spectator-nickname"></span>
+								<span id="space4-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space4-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(4)">
+							이동
+						</button>
+					</div>
+					<div id="space5" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space5-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space5-host"></span>
+								<span id="space5-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space5-nickname" class="spectator-nickname"></span>
+								<span id="space5-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space5-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(5)">
+							이동
+						</button>
+					</div>
+					<div id="space6" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space6-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space6-host"></span>
+								<span id="space6-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space6-nickname" class="spectator-nickname"></span>
+								<span id="space6-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space6-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(6)">
+							이동
+						</button>
+					</div>
+					<div id="space7" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space7-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space7-host"></span>
+								<span id="space7-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space7-nickname" class="spectator-nickname"></span>
+								<span id="space7-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space7-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(7)">
+							이동
+						</button>
+					</div>
+					<div id="space8" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space8-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space8-host"></span>
+								<span id="space8-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space8-nickname" class="spectator-nickname"></span>
+								<span id="space8-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space8-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(8)">
+							이동
+						</button>
+					</div>
+					<div id="space9" class="spectator">
+						<div class="spectator-info">
+							<figure class="spectator-figure">
+								<img id="space9-image" class="spectator-image" src="/images/white-image.png" alt="" />
+							</figure>
+							<div class="spectator-box">
+								<span id="space9-host"></span>
+								<span id="space9-level" class="badge text-bg-primary spectator-level"></span>
+								<span id="space9-nickname" class="spectator-nickname"></span>
+								<span id="space9-title" class="badge text-bg-warning spectator-title"></span>
+							</div>
+						</div>
+						<button id="space9-move" class="btn btn-secondary spectator-move" onclick="handleMoveButton(9)">
+							이동
+						</button>
+					</div>
+				</div>
+			</div>
+		</main>
+		<div class="sub">
+			<button id="ready-button" class="ready-button">준비 하기</button>
+			<button id="start-button" class="ready-button" style="display: none;">게임 시작</button>
+			<div class="chat-box">
+				<div id="chat-box-body" class="chat-box-body"></div>
+				<input id="chat-input" class="form-control chat-input" type="text" placeholder="메시지 입력" autocomplete="off" />
+			</div>
+		</div>
+	</div>
+	<div class="loading-container">
+		<div class="loading-box">
+			<div class="progress loading-box" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+				<div id="progress-percentage" class="progress-text">0%</div>
+				<div id="progress-bar-value" class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 0%"></div>
+			</div>
+		</div>
+		<p id="loading-text">연결중...</p>
+	</div>
+	<!-- User Info Modal -->
+	<div class="modal fade" id="user-info" tabindex="-1" aria-labelledby="user-info-label" aria-hidden="true">
+		<div id="user-info-modal" class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="user-info-label">Modal title</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">...</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

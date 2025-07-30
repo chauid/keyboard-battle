@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Box Animation</title>
+	<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+	<script>
+		let koreanTexts = [
+			"저는 프로그래밍을 좋아합니다",
+			"한글 타이핑 속도를 측정해보세요",
+			"코파일럿은 정말 대단한 도구입니다",
+			"이 프로젝트는 한글 타이핑 속도를 측정하는데 도움이 됩니다",
+			"타자 연습을 통해 속도와 정확도를 향상시킬 수 있습니다",
+			"한글을 빠르게 타이핑하는 방법을 배우고 싶으신가요?",
+			"타자 속도 측정 프로그램을 만들어보세요",
+			"자신의 타자 속도를 측정하고 다른 사람들과 경쟁해보세요",
+		];
+		let typingTextList = [];
+
+		$(document).ready(function () {
+			function countKeystrokesSentence(sentence) {
+				const sentenceString = sentence ? sentence : "";
+				let totalKeyStrokes = 0;
+				for (let i = 0; i < sentenceString.length; i++) {
+					totalKeyStrokes += countKeystrokes(sentenceString[i]);
+				}
+				return totalKeyStrokes;
+			}
+			function countKeystrokes(hangulChar) {
+				const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+				const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+				const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
+				const BASE_CODE = 0xAC00; // '가'의 유니코드
+				const charCode = hangulChar.charCodeAt(0);
+
+				if (charCode < BASE_CODE || charCode > BASE_CODE + 11171) {
+					return 1; // 한글 범위가 아닐 경우
+				}
+
+				// 초성, 중성, 종성 인덱스 계산
+				let index = charCode - BASE_CODE;
+				let jong = index % 28;
+				let jung = ((index - jong) / 28) % 21;
+				let cho = ((index - jong) / 28 - jung) / 21;
+
+				// 기본 타이핑 횟수는 초성 + 중성 (2타)
+				let keystrokes = 2;
+
+				// 종성이 존재하면 추가 1타
+				if (jong > 0) {
+					keystrokes += 1;
+
+					// 겹받침이면 추가 1타
+					if (['ㄳ', 'ㄵ', 'ㄶ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅄ'].includes(JONG[jong])) {
+						keystrokes += 1;
+					}
+				}
+
+				return keystrokes;
+			}
+
+			let startTime = null;
+
+			$("#textInput").on("input", function () {
+				if (!startTime) {
+					startTime = new Date();
+				}
+
+				let inputText = $("#textInput").val();
+
+				$('#complete').text(countKeystrokesSentence(inputText) + " / " + countKeystrokesSentence(typingTextList[0]));
+				if (countKeystrokesSentence(inputText) > countKeystrokesSentence(typingTextList[0])) {
+					if ((typingTextList.length - 1) > 0) {
+						// let randomText = koreanTexts[Math.floor(Math.random() * koreanTexts.length)];
+						$("#textDisplay").text(typingTextList[0]);
+					} else {
+						$("#textDisplay").text("더 이상 칠 문장이 없음");
+					}
+					removeBox();
+					$('#textInput').val('');
+					startTime = null;
+				}
+			});
+
+			$('#textInput').on("keypress", function (e) {
+				let inputText = $("#textInput").val();
+
+				if (e.key === "Enter" && countKeystrokesSentence(inputText) === countKeystrokesSentence(typingTextList[0])) {
+					if ((typingTextList.length - 1) > 0) {
+						// let randomText = koreanTexts[Math.floor(Math.random() * koreanTexts.length)];
+						$("#textDisplay").text(typingTextList[0]);
+					} else {
+						$("#textDisplay").text("더 이상 칠 문장이 없음");
+					}
+					removeBox();
+					$('#textInput').val('');
+					startTime = null;
+				}
+			});
+
+			setInterval(function () {
+				let inputText = $("#textInput").val();
+				// let exampleText = $("#textDisplay").text();
+				let exampleText = typingTextList[0] ? typingTextList[0] : "";
+				let keyStroke = 0;
+				let accuracyCount = 0;
+
+				for (let i = 0; i < inputText.length; i++) {
+					if (inputText[i] === exampleText[i]) {
+						keyStroke += countKeystrokes(inputText[i]);
+						accuracyCount++;
+					}
+				}
+
+				let accuracy = (accuracyCount / exampleText.length) * 100;
+				let elapsedTime = (new Date() - startTime) / 1000; // in seconds
+				let speed = (keyStroke / elapsedTime) * 60; // characters per minute
+
+				let showSpeed = Math.round(speed) ? Math.round(speed) : 0;
+				let showAccuracy = accuracy ? accuracy : 0;
+				$("#speedDisplay").text(
+					"타자 속도: " + showSpeed + " characters per minute"
+				);
+				$("#accuracyDisplay").text("정확도: " + Math.trunc(showAccuracy) + "%");
+			}, 50);
+		});
+
+		let boxCount = 0;
+		function addBox() {
+			if (boxCount >= 10) {
+				alert("최대 10개까지만 추가할 수 있습니다.");
+				return;
+			}
+			const container = document.getElementById("boxContainer");
+			const newBox = document.createElement("div");
+			newBox.classList.add("box");
+
+			let randomText = koreanTexts[Math.floor(Math.random() * koreanTexts.length)];
+			typingTextList.push(randomText);
+			$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
+			console.log(typingTextList);
+
+			newBox.textContent = randomText;
+
+			// 컨테이너의 맨 앞(위쪽)에 추가
+			container.prepend(newBox);
+			boxCount++;
+			document.getElementById("count").textContent = `Box Count: ${boxCount}`;
+		}
+
+		function removeBox() {
+			const container = document.getElementById("boxContainer");
+			const boxes = container.getElementsByClassName("box");
+
+			if (boxes.length > 0) {
+				const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
+				lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
+
+				// 애니메이션이 끝난 후 요소 제거
+				setTimeout(() => {
+					lastBox.remove();
+					boxCount = boxes.length;
+					typingTextList.shift();
+					console.log(typingTextList);
+					$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
+					document.getElementById("count").textContent = `Box Count: ${boxCount}`;
+				}, 200);
+			}
+		}
+
+		function remove5Boxes() {
+			const container = document.getElementById("boxContainer");
+			const boxes = container.getElementsByClassName("box");
+			for (let index = 0; index < 5; index++) {
+				if (boxes.length > 0) {
+					setTimeout(() => {
+						const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
+						lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
+						lastBox.remove();
+						typingTextList.shift();
+						boxCount--;
+						$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
+						document.getElementById("count").textContent = `Box Count: ${boxCount}`;
+					}, 100 * index);
+					//const lastBox = boxes[boxes.length - 1]; // 가장 아래(마지막) 요소 선택
+					//lastBox.style.animation = "fadeOut 0.2s ease-out forwards";
+					//lastBox.remove();
+					//typingTextList.shift();
+					//boxCount--;
+					//$("#textDisplay").text(typingTextList[0] ? typingTextList[0] : "");
+					//document.getElementById("count").textContent = `Box Count: ${boxCount}`;
+				}
+			}
+			console.log(typingTextList);
+		}
+	</script>
+
+</head>
+<style>
+	#boxContainer {
+		width: 300px;
+		height: 400px;
+		border: 2px solid black;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
+		/* 아래에서부터 쌓이도록 설정 */
+		/* position: relative; */
+	}
+
+	.box {
+		width: 90%;
+		padding: 10px;
+		margin: 5px 0;
+		background-color: lightblue;
+		border: 1px solid blue;
+		text-align: center;
+		animation: dropDown 0.5s ease-out forwards;
+	}
+
+	@keyframes dropDown {
+		from {
+			transform: translateY(-100%);
+			opacity: 0;
+		}
+
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	@keyframes fadeOut {
+		from {
+			transform: translateY(0);
+			opacity: 1;
+		}
+
+		to {
+			transform: translateY(100%);
+			opacity: 0;
+		}
+	}
+</style>
+
+<body>
+	<button onclick="addBox()">Add Box</button>
+	<button onclick="removeBox()">Remove Box</button>
+	<button onclick="remove5Boxes()">5remove</button>
+	<div id="boxContainer"></div>
+	<p id="count"></p>
+
+	<script>
+
+	</script>
+	<div id="textDisplay" style="font-size: 1rem;"></div>
+	<input type="text" id="textInput" style="width: 400px; font-size: 1rem;" autocomplete="off" />
+	<p id="speedDisplay"></p>
+	<p id="accuracyDisplay"></p>
+	<p id="complete"></p>
+</body>
+
+</html>
